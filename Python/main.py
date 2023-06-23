@@ -37,16 +37,18 @@ class IPManager:
       ip = None
     return ip
 
-  def send_ip_to_gas(self, current_ip):
+  def send_ip_to_gas(self, current_ip: str):
     print('Sending own IP to GAS...')
     address = self.gas_script_url
     headers = {'Content-Type': 'application/json'}
+    ip_to_send = self.encrypt_str(current_ip) if CONFIG['ENCRYPT_SENT_IPS'] else current_ip
     data = {
       'authCode': self.gas_auth_code,
       'serviceName': self.machine_name,
       'requestType': 'UPDATE_IP',
-      'ip': current_ip,
+      'ip': ip_to_send,
     }
+    print(f'Sending this to GAS: ', data)
     response = requests.post(address, headers=headers, data=json.dumps(data))
     print('Response from server: ', response.text)
 
@@ -79,23 +81,35 @@ class IPManager:
     }
     response = requests.post(address, headers=headers, data=json.dumps(data))
     print('Response from server: ', response.text)
-    print('Network: ', json.loads(response.content)['value'])
+    
+    fetched_network = [[value[0], value[1]] for value in json.loads(response.content)['value']]
+
+    for record in fetched_network:
+      if not self.is_valid_ipv4(record[1]):
+        print('IP is encrypted. Decoding...')
+        decoded_ip = self.decrypt_str(record[1])
+        if self.is_valid_ipv4(decoded_ip):
+          print('IP decoded.')
+          record[1] = decoded_ip
+        else:
+          raise Exception('Error decrypting IP')
+        
+    self.network = fetched_network
+    print('Network: ', self.network)
 
   def is_valid_ipv4(self, ip):
     pattern = r"^(?:\d{1,3}\.){3}\d{1,3}$"
     return bool(re.match(pattern, ip))
 
-  def encrypt_str(self, string_to_encrypt):
+  def encrypt_str(self, string_to_encrypt: str) -> str:
     cipher_suite = Fernet(self.encryption_key)
-    encrypted_string = cipher_suite.encrypt(string_to_encrypt.encode())
-    return encrypted_string
+    encrypted_bytes = cipher_suite.encrypt(string_to_encrypt.encode())
+    return encrypted_bytes.decode()
   
-  def decrypt_str(self, string_to_decrypt):
+  def decrypt_str(self, string_to_decrypt: str) -> str:
     cipher_suite = Fernet(self.encryption_key)
-    decrypted_string = cipher_suite.decrypt(string_to_decrypt).decode()
-    return decrypted_string
-
-
+    decrypted_bytes = cipher_suite.decrypt(string_to_decrypt.encode())
+    return decrypted_bytes.decode()
 
 
 
@@ -115,25 +129,20 @@ if CONFIG['IP_ENCRYPTION_KEY'] == '':
   with open('config.json', 'w') as config_file:
     json.dump(CONFIG, config_file)
 
-
-
-
-# IP_MANAGER.update()
-
-
-
-
-ip = '151.96.56.23'
-encrypted = IP_MANAGER.encrypt_str(ip)
-decrypted = IP_MANAGER.decrypt_str(encrypted)
-print('ip: ', ip)
-print('encrypted: ', encrypted)
-print('decrypted: ', decrypted)
+IP_MANAGER.update()
 
 
 
 
-quit()
+# ip = '151.96.56.23'
+# encrypted = IP_MANAGER.encrypt_str(ip)
+# decrypted = IP_MANAGER.decrypt_str(encrypted)
+# print('ip: ', ip)
+# print('encrypted: ', encrypted, type(encrypted))
+# print('decrypted: ', decrypted, type(decrypted))
+
+
+
 
 
 # Schedule the task
