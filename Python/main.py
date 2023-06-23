@@ -1,3 +1,4 @@
+import base64
 from cryptography.fernet import Fernet
 import json
 import re
@@ -15,18 +16,17 @@ print('Config loaded.')
 #
 # CLASSES DEFINITION
 #
-
-
 class IPManager:
-  def __init__(self, ip_service, gas_script_url, gas_auth_code, machine_name, encryption_seed):
+  def __init__(self, ip_service, gas_script_url, gas_auth_code, machine_name, encryption_key):
     self.gas_script_url = gas_script_url
     self.gas_auth_code = gas_auth_code
     self.ip_service = ip_service
     self.machine_name = machine_name
     self.get_own_ip_attempts = 0
     self.last_known_ip = None
-    self.encryption_seed = encryption_seed
+    self.encryption_key = base64.b64decode(encryption_key) if encryption_key != '' else Fernet.generate_key()
     self.network = []
+
 
   def get_own_ip(self):
     print('Getting own IP...')
@@ -86,13 +86,13 @@ class IPManager:
     return bool(re.match(pattern, ip))
 
   def encrypt_str(self, string_to_encrypt):
-    cipher_suite = Fernet(self.encryption_seed.encode())
+    cipher_suite = Fernet(self.encryption_key)
     encrypted_string = cipher_suite.encrypt(string_to_encrypt.encode())
     return encrypted_string
   
   def decrypt_str(self, string_to_decrypt):
-    cipher_suite = Fernet(self.encryption_seed.encode())
-    decrypted_string = cipher_suite.decrypt(string_to_decrypt.encode()).decode()
+    cipher_suite = Fernet(self.encryption_key)
+    decrypted_string = cipher_suite.decrypt(string_to_decrypt).decode()
     return decrypted_string
 
 
@@ -105,13 +105,28 @@ class IPManager:
 #
 print('Program started')
 
-IP_MANAGER = IPManager(CONFIG['IP_SERVICE'], CONFIG['GAS_SCRIPT_URL'], CONFIG['GAS_AUTHCODE'], CONFIG['MACHINE_NAME'], CONFIG['IP_ENCRYPTION_SEED'])
+IP_MANAGER = IPManager(CONFIG['IP_SERVICE'], CONFIG['GAS_SCRIPT_URL'], CONFIG['GAS_AUTHCODE'], CONFIG['MACHINE_NAME'], CONFIG['IP_ENCRYPTION_KEY'])
+
+
+# if a new key is generated, write it to the config.json
+if CONFIG['IP_ENCRYPTION_KEY'] == '':
+  CONFIG['IP_ENCRYPTION_KEY'] = base64.b64encode(IP_MANAGER.encryption_key).decode()
+  print(f'Saving new key: ', CONFIG['IP_ENCRYPTION_KEY'])
+  with open('config.json', 'w') as config_file:
+    json.dump(CONFIG, config_file)
+
+
+
+
 # IP_MANAGER.update()
 
-print('seed: ', IP_MANAGER.encryption_seed)
+
+
+
 ip = '151.96.56.23'
 encrypted = IP_MANAGER.encrypt_str(ip)
 decrypted = IP_MANAGER.decrypt_str(encrypted)
+print('ip: ', ip)
 print('encrypted: ', encrypted)
 print('decrypted: ', decrypted)
 
