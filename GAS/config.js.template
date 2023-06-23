@@ -1,0 +1,14 @@
+/** @description Global config object */
+const CONFIG = {
+  SPREADSHEET_ID: '',
+  AUTHCODE: '',
+  LOG_SHEET_NAME: 'LOG', 
+  IP_HISTORY_SHEET_NAME: 'IP_HISTORY',
+  MAX_IP_LOGS_FOR_EVERY_SERVICE: 5,
+  MAX_LOGS: 1000,
+
+  COLUMNS: {
+    SERVICE_NAME: 2,
+    SERVICE_IP: 3
+  }
+}

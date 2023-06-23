@@ -1,0 +1,7 @@
+{
+  "GAS_SCRIPT_URL": "",
+  "GAS_AUTHCODE": "",
+  "IP_UPDATE_INTERVAL": 10,
+  "MACHINE_NAME": "",
+  "IP_SERVICE": "https://api.ipify.org"
+}
