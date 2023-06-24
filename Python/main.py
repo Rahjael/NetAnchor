@@ -5,6 +5,7 @@ import re
 import requests
 import schedule
 import time
+from typing import Union
 from tqdm import tqdm
 
 print('Loading config...')
@@ -17,18 +18,33 @@ print('Config loaded.')
 # CLASSES DEFINITION
 #
 class IPManager:
-  def __init__(self, ip_service, gas_script_url, gas_auth_code, machine_name, encryption_key):
+  """Handles IP retrieval, checks and POST requests to the GAS script"""
+  def __init__(self, ip_service: str, gas_script_url: str, gas_auth_code: str, machine_label: str, encryption_key: str):
+    """_summary_
+
+    Args:
+      ip_service (str): The service to use for IP retrieval
+      gas_script_url (str): The URL where the GAS script resides
+      gas_auth_code (str): The security password so GAS can accepts requests
+      machine_label (str): The label for this machine
+      encryption_key (str): The encryption key for encrypted requests
+    """
     self.gas_script_url = gas_script_url
     self.gas_auth_code = gas_auth_code
     self.ip_service = ip_service
-    self.machine_name = machine_name
+    self.machine_label = machine_label
     self.get_own_ip_attempts = 0
     self.last_known_ip = None
     self.encryption_key = base64.b64decode(encryption_key) if encryption_key != '' else Fernet.generate_key()
     self.network = []
 
 
-  def get_own_ip(self):
+  def get_own_ip(self) -> Union[str, None]:
+    """Sends a GET request to the IP retrieval service of choice.
+
+    Returns:
+      Union[str, None]: either the current IP (str) or None if retrieval fails
+    """
     print('Getting own IP...')
     try:
       ip = requests.get(self.ip_service).text
@@ -37,14 +53,17 @@ class IPManager:
       ip = None
     return ip
 
-  def send_ip_to_gas(self, current_ip: str):
+  def send_ip_to_gas(self, current_ip: str) -> None:
     print('Sending own IP to GAS...')
     address = self.gas_script_url
     headers = {'Content-Type': 'application/json'}
-    ip_to_send = self.encrypt_str(current_ip) if CONFIG['ENCRYPT_SENT_IPS'] else current_ip
+    ip_to_send = self.encrypt_str(current_ip) if CONFIG['USE_ENCYPTED_DATABASE'] else current_ip
+    machine_label = self.encrypt_str(self.machine_name) if CONFIG['USE_ENCYPTED_DATABASE'] else current_ip
+
     data = {
       'authCode': self.gas_auth_code,
-      'serviceName': self.machine_name,
+      # TODO "serviceName" should be changed to "machineLabel", but we have too sync this change with GAS routes or the program breaks
+      'serviceName': machine_label,
       'requestType': 'UPDATE_IP',
       'ip': ip_to_send,
     }
@@ -52,7 +71,7 @@ class IPManager:
     response = requests.post(address, headers=headers, data=json.dumps(data))
     print('Response from server: ', response.text)
 
-  def update(self):
+  def update(self) -> None:
     self.get_own_ip_attempts += 1
     current_ip = self.get_own_ip()
 
@@ -69,7 +88,7 @@ class IPManager:
     self.get_own_ip_attempts = 0
     self.get_network_from_GAS()
 
-  def get_network_from_GAS(self):
+  def get_network_from_GAS(self) -> None:
     print('Requesting network to GAS...')
     address = self.gas_script_url
     headers = {'Content-Type': 'application/json'}
@@ -97,7 +116,7 @@ class IPManager:
     self.network = fetched_network
     print('Network: ', self.network)
 
-  def is_valid_ipv4(self, ip):
+  def is_valid_ipv4(self, ip: str) -> bool:
     pattern = r"^(?:\d{1,3}\.){3}\d{1,3}$"
     return bool(re.match(pattern, ip))
 
@@ -124,13 +143,12 @@ IP_MANAGER = IPManager(CONFIG['IP_SERVICE'], CONFIG['GAS_SCRIPT_URL'], CONFIG['G
 
 # if a new key is generated, write it to the config.json
 if CONFIG['IP_ENCRYPTION_KEY'] == '':
-  CONFIG['IP_ENCRYPTION_KEY'] = base64.b64encode(IP_MANAGER.encryption_key).decode()
+  CONFIG['IP_ENCRYPTION_KEY'] = IP_MANAGER.encryption_key.decode()
   print(f'Saving new key: ', CONFIG['IP_ENCRYPTION_KEY'])
   with open('config.json', 'w') as config_file:
     json.dump(CONFIG, config_file)
 
 IP_MANAGER.update()
-
 
 
 
