@@ -1,3 +1,8 @@
+
+
+# STRONG ADVICE: Rename this file config.json e keep it .gitignore'd
+
+
 {
     "GAS_SCRIPT_URL": "",
     "GAS_AUTHCODE": "",
