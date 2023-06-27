@@ -35,7 +35,7 @@ class IPManager:
     self.machine_label = machine_label
     self.get_own_ip_attempts = 0
     self.last_known_ip = None
-    self.encryption_key = base64.b64decode(encryption_key) if encryption_key != '' else Fernet.generate_key()
+    self.encryption_key = encryption_key if encryption_key != '' else Fernet.generate_key()
     self.network = []
 
 
@@ -57,12 +57,12 @@ class IPManager:
     print('Sending own IP to GAS...')
     address = self.gas_script_url
     headers = {'Content-Type': 'application/json'}
-    ip_to_send = self.encrypt_str(current_ip) if CONFIG['USE_ENCYPTED_DATABASE'] else current_ip
-    machine_label = self.encrypt_str(self.machine_name) if CONFIG['USE_ENCYPTED_DATABASE'] else current_ip
+    ip_to_send = self.encrypt_str(current_ip) if CONFIG['USE_ENCRYPTED_DATABASE'] else current_ip
+    machine_label = self.encrypt_str(self.machine_name) if CONFIG['USE_ENCRYPTED_DATABASE'] else current_ip
 
     data = {
       'authCode': self.gas_auth_code,
-      # TODO "serviceName" should be changed to "machineLabel", but we have too sync this change with GAS routes or the program breaks
+      # TODO "serviceName" should be changed to "machineLabel", but we have to sync this change with GAS routes or the program breaks
       'serviceName': machine_label,
       'requestType': 'UPDATE_IP',
       'ip': ip_to_send,
@@ -94,7 +94,7 @@ class IPManager:
     headers = {'Content-Type': 'application/json'}
     data = {
       'authCode': self.gas_auth_code,
-      'serviceName': self.machine_name,
+      'serviceName': self.machine_label,
       'requestType': 'REQUEST_NETWORK',
       'ip': self.last_known_ip,
     }
@@ -106,6 +106,7 @@ class IPManager:
     for record in fetched_network:
       if not self.is_valid_ipv4(record[1]):
         print('IP is encrypted. Decoding...')
+        # TODO an error is raised if the encryption key is wrong.
         decoded_ip = self.decrypt_str(record[1])
         if self.is_valid_ipv4(decoded_ip):
           print('IP decoded.')
@@ -141,7 +142,7 @@ print('Program started')
 IP_MANAGER = IPManager(CONFIG['IP_SERVICE'], CONFIG['GAS_SCRIPT_URL'], CONFIG['GAS_AUTHCODE'], CONFIG['MACHINE_NAME'], CONFIG['IP_ENCRYPTION_KEY'])
 
 
-# if a new key is generated, write it to the config.json
+# if a new key is generated, we write it to the config.json
 if CONFIG['IP_ENCRYPTION_KEY'] == '':
   CONFIG['IP_ENCRYPTION_KEY'] = IP_MANAGER.encryption_key.decode()
   print(f'Saving new key: ', CONFIG['IP_ENCRYPTION_KEY'])
@@ -168,7 +169,7 @@ schedule.every(CONFIG['IP_UPDATE_INTERVAL']).minutes.do(IP_MANAGER.update)
 
 # Loop so that the scheduled tasks keep on running all time.
 while True:
-  for i in tqdm(range(60), desc="Waiting for next check: "):
+  for i in tqdm(range(300), desc="Waiting for next check: "):
     time.sleep(1)
   schedule.run_pending()
 
