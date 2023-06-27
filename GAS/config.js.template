@@ -1,3 +1,11 @@
+
+
+
+# STRONG ADVICE: Rename this file config.js e keep it .gitignore'd
+
+
+
+
 /** @description Global config object */
 const CONFIG = {
   SPREADSHEET_ID: '',
