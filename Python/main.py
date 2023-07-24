@@ -1,6 +1,7 @@
 import base64
 from cryptography.fernet import Fernet
 import json
+import os
 import re
 import requests
 import schedule
@@ -8,8 +9,15 @@ import time
 from typing import Union
 from tqdm import tqdm
 
+config_file_path = os.path.join(os.getcwd(), 'config.json')
+
+if os.path.exists(config_file_path):
+  print('Config file exists.')
+else:
+  raise Exception('Config file not found. Unable to run program.')
+
 print('Loading config...')
-with open('config.json', "r") as file:
+with open(config_file_path, "r") as file:
   CONFIG = json.load(file)
 print('Config loaded.')
 
