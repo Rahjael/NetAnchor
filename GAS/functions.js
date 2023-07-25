@@ -54,10 +54,14 @@ SHEET = {
   
   
   function test() {
+
+    Logger.log('test')
+  
+    /*
     Logger.log('started')
     clearObsoleteIPs();
     Logger.log('end')
-  
+    */
   
     /*
     const testContentsUPDATE_IP = {
