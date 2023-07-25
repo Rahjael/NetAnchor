@@ -63,7 +63,7 @@ class IPManager:
     response = requests.post(address, headers=headers, data=json.dumps(data))
     print('Response from server: ', response.text)
 
-  def update(self) -> None:
+  def update(self) -> list[str]:
     self.get_own_ip_attempts += 1
     current_ip = self.get_own_ip()
 
@@ -78,9 +78,10 @@ class IPManager:
     else:
       print(f'IP has not changed since last check. ({current_ip}/{self.last_known_ip})')
     self.get_own_ip_attempts = 0
-    self.get_network_from_GAS()
+    return self.get_network_from_GAS()
 
-  def get_network_from_GAS(self) -> None:
+
+  def get_network_from_GAS(self) -> list[str]:
     print('Requesting network to GAS...')
     address = self.gas_script_url
     headers = {'Content-Type': 'application/json'}
@@ -96,20 +97,22 @@ class IPManager:
     fetched_network = [[value[0], value[1]] for value in json.loads(response.content)['value']]
 
     for record in fetched_network:
-      if not self.is_valid_ipv4(record[1]):
+      if not self.is_valid_ipv4(record[1]): # If it's not valid ip, it could be an encrypted string, so it tries to decrypt it
         print('IP is encrypted. Decoding...')
-        # TODO an error is raised if the encryption key is wrong.
+        # TODO an error is raised if the encryption key is wrong. Should return something to the UI
         decoded_ip = self.decrypt_str(record[1])
         if self.is_valid_ipv4(decoded_ip):
           print('IP decoded.')
           record[1] = decoded_ip
         else:
-          raise Exception('Error decrypting IP')
+          raise Exception('Error decrypting IP') # ? This could just update the fetched network with the same string
         
     self.network = fetched_network
     print('Network: ')
     for entry in self.network:
       print(entry)
+
+    return self.network
 
   def is_valid_ipv4(self, ip: str) -> bool:
     pattern = r"^(?:\d{1,3}\.){3}\d{1,3}$"
