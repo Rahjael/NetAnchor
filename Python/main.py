@@ -22,6 +22,157 @@ print('Config loaded.')
 
 print('Program started')
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+MOCK_NETWORK = [
+  ['OFFICE_PC', '151.83.33.126'],
+  ['MAIN_PC', '151.83.58.105'],
+  ['LAPTOP', '93.47.230.0'],
+  ['iOS_LAPTOP', '151.41.127.145'],
+  ['NAS', '151.40.127.63'],
+  ['HOME_DESKTOP', '151.83.20.187'],
+  ['SELF_HOSTED_WEBSERVER', '151.83.42.33']
+]
+
+MOCK_LOGS = [
+   "Connection established.",
+   "blablabla info",
+   "something went wrong, pc will now explode"
+]
+
+
+
+import PySimpleGUI as sg
+
+def create_layout(network):
+    """
+    Create the layout for the GUI window.
+    """
+
+    print('Creating layout for network: ', network)
+
+    network_frame_rows = []
+    for entry in network:
+      network_frame_rows.append([sg.Text(entry[0], expand_x=True), sg.Text(entry[1]), sg.Button("Copy")])
+
+
+    print('network_frame_rows: ', network_frame_rows)
+
+
+
+
+    network_frame = sg.Frame('Network', network_frame_rows)
+
+    
+    log_frame_rows = [[sg.Text(row)] for row in MOCK_LOGS] # TODO need dynamic logs. implement a Logger class? Observer maybe?
+
+    log_frame = sg.Frame('Log', log_frame_rows)
+
+
+    links_column = sg.Column([
+      [sg.Text("Download TightVNC")],
+      [sg.Text("Open sheet in Google Drive")],
+      [sg.Text("Donate")],
+      [sg.Text("Github")],
+    ], element_justification='r', expand_x=True)
+
+
+    upper_row = [network_frame, sg.Push(), sg.Button('Update now'), sg.Push()]
+    lower_row = [log_frame, links_column]
+
+
+
+    progress_bar = [sg.ProgressBar(100)]
+
+    status_bar = [sg.StatusBar("Current IP: 156.562.369.53 | Time to next update: 9m16s")]
+
+
+
+    layout = [
+       upper_row,
+       progress_bar,
+       lower_row,
+       status_bar,
+    ]
+    return layout
+
+
+
+
+
+
+
+
+
+
+def main():
+    """
+    Main function to create and run the GUI window.
+    """
+    sg.theme("DefaultNoMoreNagging")  # Choose a theme for the window
+
+    # Create the GUI window using the layout
+    window = sg.Window("NetAnchor - v0.1.12", create_layout(MOCK_NETWORK)) # TODO change MOCK_NETWORK in production
+
+    # Event loop to process events and update the window
+    while True:
+        event, values = window.read()
+
+        # Exit the program when the window is closed
+        if event == sg.WIN_CLOSED:
+            break
+
+        # Update the text when the button is clicked
+        if event == "Click Me":
+            window["-OUTPUT-"].update("Button Clicked!")
+
+    # Close the window and end the program
+    window.close()
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+quit()
+
+
+
 IP_MANAGER = IPManager(CONFIG)
 
 
@@ -33,6 +184,21 @@ if CONFIG['IP_ENCRYPTION_KEY'] == '':
     json.dump(CONFIG, config_file)
 
 IP_MANAGER.update()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

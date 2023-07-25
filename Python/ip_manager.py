@@ -124,3 +124,6 @@ class IPManager:
     cipher_suite = Fernet(self.encryption_key)
     decrypted_bytes = cipher_suite.decrypt(string_to_decrypt.encode())
     return decrypted_bytes.decode()
+
+  def get_network(self):
+    return self.network
