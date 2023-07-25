@@ -3,6 +3,7 @@ import os
 import schedule
 import time
 from tqdm import tqdm
+import PySimpleGUI as sg
 
 from ip_manager import IPManager
 
@@ -53,7 +54,6 @@ MOCK_LOGS = [
 
 
 
-import PySimpleGUI as sg
 
 def create_layout(network):
     """
@@ -63,8 +63,8 @@ def create_layout(network):
     print('Creating layout for network: ', network)
 
     network_frame_rows = []
-    for entry in network:
-      network_frame_rows.append([sg.Text(entry[0], expand_x=True), sg.Text(entry[1]), sg.Button("Copy")])
+    for i, entry in enumerate(network):
+      network_frame_rows.append([sg.Text(entry[0], key=f'-CLIENT_{i}_LABEL-', expand_x=True), sg.Text(entry[1], key=f'-CLIENT_{i}_IP-'), sg.Button("Copy", key=f'-BUTTON_COPY_IP_{i}-')])
 
 
     print('network_frame_rows: ', network_frame_rows)
@@ -127,7 +127,16 @@ def main():
 
     # Event loop to process events and update the window
     while True:
-        event, values = window.read()
+        event, values = window.read(timeout=100) # ! this is a blocking function until an event is triggered. Set a timeout (ms)
+
+
+        if event.startswith("-BUTTON_COPY_IP_"):
+            print('event: ', event)
+            index = int(event.split("_")[3].replace('-', ''))
+            client_ip = window[f'-CLIENT_{index}_IP-'].get()
+            sg.clipboard_set(client_ip)
+            sg.popup(f"IP '{client_ip}' copied to clipboard!", auto_close=True, auto_close_duration=1)
+
 
         # Exit the program when the window is closed
         if event == sg.WIN_CLOSED:
@@ -139,6 +148,9 @@ def main():
 
     # Close the window and end the program
     window.close()
+
+
+
 
 if __name__ == "__main__":
     main()
