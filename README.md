@@ -8,17 +8,19 @@ NetAnchor updates the IP table on Google Sheet using App Script, each device is 
 
 ![visual-explanation](docs/NetAnchor-draw.png)
 
-## Instructions
+## Overview
 - Install NetAnchor on the devices you want to track
 - Login with Google 
-- App Script permissions
+- App Script permissions & Sheets
 - Enjoy!
+
+---
 
 ## Quick Start
 
 ### GAS Setup
 
-- Create files in a Google Drive folder:
+- **Google Drive dedicated folder**:
   - Google Sheet
     - empty sheet called `LOG`
     - empty sheet called `IP_HISTORY`
@@ -26,23 +28,42 @@ NetAnchor updates the IP table on Google Sheet using App Script, each device is 
     - script called `config.gs` (static configurations)
     - script called `functions.gs` (dynamic code)
 
-- GAS
+- **GAS**
   - in `config.gs` 
-    - `SPREADSHEET_ID` will be gathered from the Database sheet from the URL `/d/example_speradsheet_id_random_characters/edit`
+    - `SPREADSHEET_ID` will be gathered from the Database sheet from the URL `/d/example_spreadsheet_id_random_characters/edit`
     - `AUTHCODE` can be a made up code, this just have to be identical to the one in the `Python/config.json`
   - in `functions.gs` 
     - just paste the content of `GAS/functions.js` file
-  - Execute to grant permissions
-    - In the first run it will ask for permissions, which of course will have to be accepted in order to make this work. 
-  - Deployment (a new deployment will be needed for each GAS code modification, it changes the URL, so keep changes to the minimum)
-    - Deploy
-    - Web App
-    - (name of preference)
-    - Access: Anyone
-    - Deploy
-    - Copy Web App URL
-    - Paste it in `Python/config.json`, `GAS_SCRIPT_URL`
 
+  - **Execute** on *Apps Script* to grant permissions
+    - grant permissions
+  - **Deployment** on Apps Script
+    - Click *Deploy* button (upper right corner)
+    - Choose *Web App* and choose any name you like
+    - *Access: Anyone* (read below)
+    - *Deploy* the App
+    - *Copy* Web App URL
+    - *Paste* it in `Python/config.json`, `GAS_SCRIPT_URL`
 
-## Suggested tools
-- ipfy API is used for retrieving the IPs
+    **Note**: the code URL is public, even if very hard to find being random numbers, but there is no response and no data is sent.
+
+- ***Run...***
+
+### Run `main.py`
+
+- Running `main.py` should now populate the Google Sheet with data
+- The data will be accessible through the UI, but you can also access it directly on the Google Sheet
+
+---
+
+## Roadmap
+
+- [x] Working with console logs
+- [ ] Basic UI
+- [ ] Encryption fix
+- [ ] Custom configs through UI settings
+- [ ] Google Marketplace Add-On to streamline the installation process
+
+## Suggested Tools
+- [TightVNC](https://www.tightvnc.com/download.html) for remote access
+- [ipfy API](https://www.ipify.org/) is used for retrieving the IPs
