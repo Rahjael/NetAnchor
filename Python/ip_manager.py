@@ -77,6 +77,7 @@ class IPManager:
       self.last_known_ip = current_ip
     else:
       print(f'IP has not changed since last check. ({current_ip}/{self.last_known_ip})')
+    
     self.get_own_ip_attempts = 0
     return self.get_network_from_GAS()
 

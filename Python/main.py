@@ -36,14 +36,20 @@ print('Program started')
 
 
 
+# MOCK_NETWORK = [
+#   ['OFFICE_PC', '151.83.33.126'],
+#   ['MAIN_PC', '151.83.58.105'],
+#   ['LAPTOP', '93.47.230.0'],
+#   ['iOS_LAPTOP', '151.41.127.145'],
+#   ['NAS', '151.40.127.63'],
+#   ['HOME_DESKTOP', '151.83.20.187'],
+#   ['SELF_HOSTED_WEBSERVER', '151.83.42.33']
+# ]
+
+
+
 MOCK_NETWORK = [
-  ['OFFICE_PC', '151.83.33.126'],
-  ['MAIN_PC', '151.83.58.105'],
-  ['LAPTOP', '93.47.230.0'],
-  ['iOS_LAPTOP', '151.41.127.145'],
-  ['NAS', '151.40.127.63'],
-  ['HOME_DESKTOP', '151.83.20.187'],
-  ['SELF_HOSTED_WEBSERVER', '151.83.42.33']
+  ['Network', 'empty']
 ]
 
 MOCK_LOGS = [
@@ -62,17 +68,20 @@ def create_layout(network):
 
     print('Creating layout for network: ', network)
 
-    network_frame_rows = []
-    for i, entry in enumerate(network):
-      network_frame_rows.append([sg.Text(entry[0], key=f'-CLIENT_{i}_LABEL-', expand_x=True), sg.Text(entry[1], key=f'-CLIENT_{i}_IP-'), sg.Button("Copy", key=f'-BUTTON_COPY_IP_{i}-')])
+    # Text version
+    # network_frame_rows = []
+    # for i, entry in enumerate(network):
+    #   network_frame_rows.append([sg.Text(entry[0], key=f'-CLIENT_{i}_LABEL-', expand_x=True), sg.Text(entry[1], key=f'-CLIENT_{i}_IP-'), sg.Button("Copy", key=f'-BUTTON_COPY_IP_{i}-')])
 
+    # ListBox version
+    network_frame_rows = [[sg.Listbox([f'{entry[0]}: {entry[1]}' for entry in network], key='-CLIENTS-', enable_events=True, size=(50, 10))]]
 
     print('network_frame_rows: ', network_frame_rows)
 
 
 
 
-    network_frame = sg.Frame('Network', network_frame_rows)
+    network_frame = sg.Frame('Network', network_frame_rows, key='-NETWORK_FRAME-')
 
     
     log_frame_rows = [[sg.Text(row)] for row in MOCK_LOGS] # TODO need dynamic logs. implement a Logger class? Observer maybe?
@@ -88,7 +97,7 @@ def create_layout(network):
     ], element_justification='r', expand_x=True)
 
 
-    upper_row = [network_frame, sg.Push(), sg.Button('Update now'), sg.Push()]
+    upper_row = [network_frame, sg.Push(), sg.Button('Update now', key='-BUTTON_FORCE_NETWORK_UPDATE-'), sg.Push()]
     lower_row = [log_frame, links_column]
 
 
@@ -117,37 +126,58 @@ def create_layout(network):
 
 
 def main():
-    """
-    Main function to create and run the GUI window.
-    """
-    sg.theme("DefaultNoMoreNagging")  # Choose a theme for the window
+  IP_MANAGER = IPManager(CONFIG)
 
-    # Create the GUI window using the layout
-    window = sg.Window("NetAnchor - v0.1.12", create_layout(MOCK_NETWORK)) # TODO change MOCK_NETWORK in production
+  # if a new key is generated, we write it to the config.json
+  if CONFIG['IP_ENCRYPTION_KEY'] == '':
+    CONFIG['IP_ENCRYPTION_KEY'] = IP_MANAGER.encryption_key.decode()
+    print(f'Saving new key: ', CONFIG['IP_ENCRYPTION_KEY'])
+    with open('config.json', 'w') as config_file:
+      json.dump(CONFIG, config_file)
 
-    # Event loop to process events and update the window
-    while True:
-        event, values = window.read(timeout=100) # ! this is a blocking function until an event is triggered. Set a timeout (ms)
-
-
-        if event.startswith("-BUTTON_COPY_IP_"):
-            print('event: ', event)
-            index = int(event.split("_")[3].replace('-', ''))
-            client_ip = window[f'-CLIENT_{index}_IP-'].get()
-            sg.clipboard_set(client_ip)
-            sg.popup(f"IP '{client_ip}' copied to clipboard!", auto_close=True, auto_close_duration=1)
+  # IP_MANAGER.update()
 
 
-        # Exit the program when the window is closed
-        if event == sg.WIN_CLOSED:
-            break
 
-        # Update the text when the button is clicked
-        if event == "Click Me":
-            window["-OUTPUT-"].update("Button Clicked!")
 
-    # Close the window and end the program
-    window.close()
+  sg.theme("DefaultNoMoreNagging")  # Choose a theme for the window
+
+  # Create the GUI window using the layout
+  window = sg.Window("NetAnchor - v0.1.12", create_layout(MOCK_NETWORK)) # TODO change MOCK_NETWORK in production
+
+  # Event loop to process events and update the window
+  while True:
+      event, values = window.read(timeout=10000) # ! this is a blocking function until an event is triggered. Set a timeout (ms)
+
+      print('event (main loop): ', event)
+
+      if event == '-BUTTON_FORCE_NETWORK_UPDATE-':
+        print('event: ', event)
+
+        network = IP_MANAGER.update()
+
+        window['-CLIENTS-'].update(values=[f'{entry[0]}: {entry[1]}' for entry in network])
+        window.refresh()
+
+
+      if event.startswith("-BUTTON_COPY_IP_"):
+          print('event: ', event)
+          index = int(event.split("_")[3].replace('-', ''))
+          client_ip = window[f'-CLIENT_{index}_IP-'].get()
+          sg.clipboard_set(client_ip)
+          sg.popup(f"IP '{client_ip}' copied to clipboard!", auto_close=True, auto_close_duration=1)
+
+
+      # Exit the program when the window is closed
+      if event == sg.WIN_CLOSED:
+          break
+
+      # Update the text when the button is clicked
+      if event == "Click Me":
+          window["-OUTPUT-"].update("Button Clicked!")
+
+  # Close the window and end the program
+  window.close()
 
 
 
@@ -182,22 +212,6 @@ if __name__ == "__main__":
 
 
 quit()
-
-
-
-IP_MANAGER = IPManager(CONFIG)
-
-
-# if a new key is generated, we write it to the config.json
-if CONFIG['IP_ENCRYPTION_KEY'] == '':
-  CONFIG['IP_ENCRYPTION_KEY'] = IP_MANAGER.encryption_key.decode()
-  print(f'Saving new key: ', CONFIG['IP_ENCRYPTION_KEY'])
-  with open('config.json', 'w') as config_file:
-    json.dump(CONFIG, config_file)
-
-IP_MANAGER.update()
-
-
 
 
 
