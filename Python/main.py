@@ -24,7 +24,7 @@ print('Config loaded.')
 print('Program started')
 
 
-PROGRAM_TITLE = "NetAnchor - v0.1.12"
+PROGRAM_TITLE = "NetAnchor - v0.1.0"
 
 
 
