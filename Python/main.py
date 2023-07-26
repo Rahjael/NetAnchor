@@ -24,7 +24,7 @@ print('Config loaded.')
 print('Program started')
 
 
-
+PROGRAM_TITLE = "NetAnchor - v0.1.12"
 
 
 
@@ -59,7 +59,7 @@ MOCK_LOGS = [
 ]
 
 
-
+reloads = 0
 
 def create_layout(network):
     """
@@ -69,12 +69,14 @@ def create_layout(network):
     print('Creating layout for network: ', network)
 
     # Text version
-    # network_frame_rows = []
-    # for i, entry in enumerate(network):
-    #   network_frame_rows.append([sg.Text(entry[0], key=f'-CLIENT_{i}_LABEL-', expand_x=True), sg.Text(entry[1], key=f'-CLIENT_{i}_IP-'), sg.Button("Copy", key=f'-BUTTON_COPY_IP_{i}-')])
+    network_frame_rows = []
+    for i, entry in enumerate(network):
+      network_frame_rows.append([sg.Text(entry[0], key=f'-CLIENT_{i}_LABEL-', expand_x=True), sg.Text(entry[1], key=f'-CLIENT_{i}_IP-'), sg.Button("Copy", key=f'-BUTTON_COPY_IP_{i}-')])
 
     # ListBox version
-    network_frame_rows = [[sg.Listbox([f'{entry[0]}: {entry[1]}' for entry in network], key='-CLIENTS-', enable_events=True, size=(50, 10))]]
+    # network_frame_rows = [[sg.Listbox([f'{entry[0]}: {entry[1]}' for entry in network], key='-CLIENTS-', enable_events=True, size=(50, 10))]]
+
+
 
     print('network_frame_rows: ', network_frame_rows)
 
@@ -97,7 +99,7 @@ def create_layout(network):
     ], element_justification='r', expand_x=True)
 
 
-    upper_row = [network_frame, sg.Push(), sg.Button('Update now', key='-BUTTON_FORCE_NETWORK_UPDATE-'), sg.Push()]
+    upper_row = [network_frame, sg.Push(), sg.Button('Reload window', key='-BUTTON_RELOAD_WINDOW-'), sg.Button('Update now', key='-BUTTON_FORCE_NETWORK_UPDATE-'), sg.Push()]
     lower_row = [log_frame, links_column]
 
 
@@ -118,7 +120,16 @@ def create_layout(network):
 
 
 
-
+def splash_window():
+  layout = [
+    [sg.VPush()],
+    [sg.Push(), sg.Text(PROGRAM_TITLE), sg.Push()],
+    [sg.VPush()],
+    [sg.Text("Fetching network, please wait a few seconds...")]
+  ]
+  window = sg.Window(f"{PROGRAM_TITLE} - Splash Screen", layout)
+  window.read(timeout=0) # ! this is a blocking function until an event is triggered. Set a timeout (ms)
+  return window
 
 
 
@@ -140,41 +151,67 @@ def main():
 
 
 
+
+  
   sg.theme("DefaultNoMoreNagging")  # Choose a theme for the window
 
-  # Create the GUI window using the layout
-  window = sg.Window("NetAnchor - v0.1.12", create_layout(MOCK_NETWORK)) # TODO change MOCK_NETWORK in production
-
+  
   # Event loop to process events and update the window
+  first_loop = True
   while True:
-      event, values = window.read(timeout=10000) # ! this is a blocking function until an event is triggered. Set a timeout (ms)
+    if first_loop == True:
+      window = splash_window()
 
-      print('event (main loop): ', event)
+      # TODO message "Please wait for network to update..." in the Logger
+      # window.disappear()
+      # window.reappear()
 
-      if event == '-BUTTON_FORCE_NETWORK_UPDATE-':
-        print('event: ', event)
-
-        network = IP_MANAGER.update()
-
-        window['-CLIENTS-'].update(values=[f'{entry[0]}: {entry[1]}' for entry in network])
-        window.refresh()
-
-
-      if event.startswith("-BUTTON_COPY_IP_"):
-          print('event: ', event)
-          index = int(event.split("_")[3].replace('-', ''))
-          client_ip = window[f'-CLIENT_{index}_IP-'].get()
-          sg.clipboard_set(client_ip)
-          sg.popup(f"IP '{client_ip}' copied to clipboard!", auto_close=True, auto_close_duration=1)
+      network = IP_MANAGER.update()
+      window.close()
+      window = sg.Window(f"{PROGRAM_TITLE} - Reloads: {reloads}", create_layout(network)) # TODO change MOCK_NETWORK in production
+      first_loop = False
 
 
-      # Exit the program when the window is closed
-      if event == sg.WIN_CLOSED:
-          break
+    event, values = window.read(timeout=100000) # ! this is a blocking function until an event is triggered. Set a timeout (ms)
 
-      # Update the text when the button is clicked
-      if event == "Click Me":
-          window["-OUTPUT-"].update("Button Clicked!")
+
+    # TODO implement regular IP_MANAGER.update()s using:
+    # TODO https://www.pysimplegui.org/en/latest/call%20reference/#window-the-window-object
+    # TODO look for "timer_start" method
+
+
+    print('event (main loop): ', event)
+
+
+
+    if event == '-BUTTON_RELOAD_WINDOW-':
+      window.close()
+      window = sg.Window(f"{PROGRAM_TITLE} - Reloads: {reloads}", create_layout(network)) # TODO change MOCK_NETWORK in production
+
+
+    if event == '-BUTTON_FORCE_NETWORK_UPDATE-':
+      print('event: ', event)
+      window['-BUTTON_FORCE_NETWORK_UPDATE-'].update('Updating...', disabled=True)
+      window.refresh()
+
+      network = IP_MANAGER.update()
+      window.close()
+      window = sg.Window(f"{PROGRAM_TITLE} - Reloads: {reloads}", create_layout(network)) # TODO change MOCK_NETWORK in production
+      # window.refresh()
+
+
+    if event.startswith("-BUTTON_COPY_IP_"):
+      print('event: ', event)
+      index = int(event.split("_")[3].replace('-', ''))
+      client_ip = window[f'-CLIENT_{index}_IP-'].get()
+      sg.clipboard_set(client_ip)
+      sg.popup(f"IP '{client_ip}' copied to clipboard!", auto_close=True, auto_close_duration=1)
+
+
+    # Exit the program when the window is closed
+    if event == sg.WIN_CLOSED:
+      break
+
 
   # Close the window and end the program
   window.close()
