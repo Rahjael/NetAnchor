@@ -1,6 +1,8 @@
 /GAS/config.js
 /Python/config.json
+/Python/__pycache__/
 /old_code/
 **/config.json
 **/config.js
 localdev
+.gitignore
