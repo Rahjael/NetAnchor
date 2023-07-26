@@ -59,8 +59,6 @@ MOCK_LOGS = [
 ]
 
 
-reloads = 0
-
 def create_layout(network):
     """
     Create the layout for the GUI window.
@@ -158,6 +156,8 @@ def main():
   
   # Event loop to process events and update the window
   first_loop = True
+  reloads = 0
+
   while True:
     if first_loop == True:
       window = splash_window()
@@ -165,6 +165,8 @@ def main():
       # TODO message "Please wait for network to update..." in the Logger
       # window.disappear()
       # window.reappear()
+
+      
 
       network = IP_MANAGER.update()
       window.close()
@@ -187,6 +189,7 @@ def main():
     if event == '-BUTTON_RELOAD_WINDOW-':
       window.close()
       window = sg.Window(f"{PROGRAM_TITLE} - Reloads: {reloads}", create_layout(network)) # TODO change MOCK_NETWORK in production
+      reloads += 1
 
 
     if event == '-BUTTON_FORCE_NETWORK_UPDATE-':
@@ -205,7 +208,7 @@ def main():
       index = int(event.split("_")[3].replace('-', ''))
       client_ip = window[f'-CLIENT_{index}_IP-'].get()
       sg.clipboard_set(client_ip)
-      sg.popup(f"IP '{client_ip}' copied to clipboard!", auto_close=True, auto_close_duration=1)
+      sg.popup_no_buttons(f"IP '{client_ip}' copied to clipboard!", no_titlebar=True, auto_close=True, auto_close_duration=2)
 
 
     # Exit the program when the window is closed
