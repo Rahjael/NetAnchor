@@ -159,31 +159,34 @@ def open_config():
     # "IP_ENCRYPTION_KEY": "ZPVU06_oHGNe8hFb5AVG9-QqjZI42VgYaHOowOW7bUY="
   layout = [
     [sg.Push(), sg.Text("Settings"), sg.Push()],
-    [sg.Text('GAS script url:'), sg.Input(CONFIG["GAS_SCRIPT_URL"], key="-GAS_SCRIPT_URL-", expand_x=True)],
-    [sg.Text('GAS AuthCode:'), sg.Input(CONFIG["GAS_AUTHCODE"], key="-GAS_AUTHCODE-", expand_x=True)],
-    [sg.Text('Network update interval (secs):'), sg.Input(CONFIG["IP_UPDATE_INTERVAL"], key="-IP_UPDATE_INTERVAL-", expand_x=True)],
-    [sg.Text('Machine label:'), sg.Input(CONFIG["MACHINE_NAME"], key="-MACHINE_LABEL-", expand_x=True)],
-    [sg.Text('IP retrieval service:'), sg.Input(CONFIG["IP_SERVICE"], key="-IP_SERVICE-", expand_x=True)],
-    [sg.Text('Use encrypted database:'), sg.Checkbox('', default=bool(CONFIG["USE_ENCRYPTED_DATABASE"]), key="-USE_ENCRYPTED_DATABASE-", expand_x=True)],
-    [sg.Text('Encryption key:'), sg.Input(CONFIG["IP_ENCRYPTION_KEY"], key="-IP_ENCRYPTION_KEY-", expand_x=True)],
-    [sg.Button("Discard changes"), sg.Button("Save changes", key='-SAVE-', expand_x=True)],
+    [sg.Text('GAS script url:'), sg.Input(CONFIG['GAS_SCRIPT_URL'], key='-GAS_SCRIPT_URL-', expand_x=True)],
+    [sg.Text('GAS AuthCode:'), sg.Input(CONFIG['GAS_AUTHCODE'], key='-GAS_AUTHCODE-', expand_x=True)],
+    [sg.Text('Network update interval (secs):'), sg.Input(CONFIG['IP_UPDATE_INTERVAL'], key='-IP_UPDATE_INTERVAL-', expand_x=True)],
+    [sg.Text('Machine label:'), sg.Input(CONFIG['MACHINE_NAME'], key='-MACHINE_LABEL-', expand_x=True)],
+    [sg.Text('IP retrieval service:'), sg.Input(CONFIG['IP_SERVICE'], key='-IP_SERVICE-', expand_x=True)],
+    [sg.Text('Use encrypted database:'), sg.Checkbox('', default=bool(CONFIG['USE_ENCRYPTED_DATABASE']), key='-USE_ENCRYPTED_DATABASE-', expand_x=True)],
+    [sg.Text('Encryption key:'), sg.Input(CONFIG['IP_ENCRYPTION_KEY'], key='-IP_ENCRYPTION_KEY-', expand_x=True)],
+    [sg.Button('Discard changes'), sg.Button('Save changes', key='-SAVE-', expand_x=True)],
   ]
-  window = sg.Window(f"{PROGRAM_TITLE} - Config", layout)
+  window = sg.Window(f'{PROGRAM_TITLE} - Config', layout)
   event, values = window.read() # ! this is a blocking function until an event is triggered.
 
   print('event of settings: ', event)
   print('values of settings: ', values)
 
   if event == '-SAVE-':
-    CONFIG["GAS_SCRIPT_URL"] = values["-GAS_SCRIPT_URL-"]
-    CONFIG["GAS_AUTHCODE"] = values["-GAS_AUTHCODE-"]
-    CONFIG["IP_UPDATE_INTERVAL"] = values["-IP_UPDATE_INTERVAL-"]
-    CONFIG["MACHINE_NAME"] = values["-MACHINE_LABEL-"]
-    CONFIG["IP_SERVICE"] = values["-IP_SERVICE-"]
-    CONFIG["USE_ENCRYPTED_DATABASE"] = values["-USE_ENCRYPTED_DATABASE-"]
-    CONFIG["IP_ENCRYPTION_KEY"] = values["-IP_ENCRYPTION_KEY-"]
+    CONFIG['GAS_SCRIPT_URL'] = values['-GAS_SCRIPT_URL-']
+    CONFIG['GAS_AUTHCODE'] = values['-GAS_AUTHCODE-']
+    CONFIG['IP_UPDATE_INTERVAL'] = values['-IP_UPDATE_INTERVAL-']
+    CONFIG['MACHINE_NAME'] = values['-MACHINE_LABEL-']
+    CONFIG['IP_SERVICE'] = values['-IP_SERVICE-']
+    CONFIG['USE_ENCRYPTED_DATABASE'] = values['-USE_ENCRYPTED_DATABASE-']
+    CONFIG['IP_ENCRYPTION_KEY'] = values['-IP_ENCRYPTION_KEY-']
 
     save_config(CONFIG, config_file_path)
+    window.close()
+
+  else:
     window.close()
   
 
