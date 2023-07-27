@@ -59,7 +59,7 @@ MOCK_LOGS = [
 ]
 
 
-def create_layout(network):
+def create_main_window_layout(network):
     """
     Create the layout for the GUI window.
     """
@@ -97,7 +97,7 @@ def create_layout(network):
     ], element_justification='r', expand_x=True)
 
 
-    upper_row = [network_frame, sg.Push(), sg.Button('Reload window', key='-BUTTON_RELOAD_WINDOW-'), sg.Button('Update now', key='-BUTTON_FORCE_NETWORK_UPDATE-'), sg.Push()]
+    upper_row = [network_frame, sg.Push(), sg.Button('Open config', key='-BUTTON_OPEN_CONFIG-'), sg.Button('Update now', key='-BUTTON_FORCE_NETWORK_UPDATE-'), sg.Push()]
     lower_row = [log_frame, links_column]
 
 
@@ -132,6 +132,45 @@ def splash_window():
 
 
 
+def open_config():
+  # TODO finish this
+    # "GAS_SCRIPT_URL": "https://script.google.com/macros/s/AKfycbzlxDo4MBRgXPUQ6KCxBD9k9gIlLNBz3ZgpbyCqVCaP5sBAvwO6PXWgpbSKnjFHPZs/exec",
+    # "GAS_AUTHCODE": "k6idf8alf9asdkwer0sasg334",
+    # "IP_UPDATE_INTERVAL": 10,
+    # "MACHINE_NAME": "HOME_DESKTOP",
+    # "IP_SERVICE": "https://api.ipify.org",
+    # "USE_ENCRYPTED_DATABASE": false,
+    # "IP_ENCRYPTION_KEY": "ZPVU06_oHGNe8hFb5AVG9-QqjZI42VgYaHOowOW7bUY="
+  layout = [
+    [sg.Push(), sg.Text("Settings"), sg.Push()],
+    [sg.Text('GAS script url:'), sg.Input(CONFIG["GAS_SCRIPT_URL"], key="-GAS_SCRIPT_URL-", expand_x=True)],
+    [sg.Text('GAS AuthCode:'), sg.Input(CONFIG["GAS_AUTHCODE"], key="-GAS_AUTHCODE-", expand_x=True)],
+    [sg.Text('Network update interval (secs):'), sg.Input(CONFIG["IP_UPDATE_INTERVAL"], key="-IP_UPDATE_INTERVAL-", expand_x=True)],
+    [sg.Text('Machine label:'), sg.Input(CONFIG["MACHINE_NAME"], key="-MACHINE_LABEL-", expand_x=True)],
+    [sg.Text('IP retrieval service:'), sg.Input(CONFIG["IP_SERVICE"], key="-IP_SERVICE-", expand_x=True)],
+    [sg.Text('Use encrypted database:'), sg.Checkbox('Use encrypted database:', default=bool(CONFIG["USE_ENCRYPTED_DATABASE"]), key="-USE_ENCRYPTED_DATABASE-", expand_x=True)],
+    [sg.Text('Encryption key:'), sg.Input(CONFIG["IP_ENCRYPTION_KEY"], key="-IP_ENCRYPTION_KEY-", expand_x=True)],
+    [sg.Button("Discard changes"), sg.Button("Save changes", expand_x=True)],
+  ]
+  window = sg.Window(f"{PROGRAM_TITLE} - Config", layout)
+  event, values = window.read() # ! this is a blocking function until an event is triggered.
+
+  print('event of settings: ', event)
+  print('values of settings: ', values)
+  
+
+
+
+
+
+
+
+
+
+# TODO generate_random_authcode()
+
+
+
 
 
 def main():
@@ -161,18 +200,10 @@ def main():
   while True:
     if first_loop == True:
       window = splash_window()
-
-      # TODO message "Please wait for network to update..." in the Logger
-      # window.disappear()
-      # window.reappear()
-
-      
-
       network = IP_MANAGER.update()
       window.close()
-      window = sg.Window(f"{PROGRAM_TITLE} - Reloads: {reloads}", create_layout(network)) # TODO change MOCK_NETWORK in production
+      window = sg.Window(f"{PROGRAM_TITLE} - Reloads: {reloads}", create_main_window_layout(network))
       first_loop = False
-
 
     event, values = window.read(timeout=100000) # ! this is a blocking function until an event is triggered. Set a timeout (ms)
 
@@ -184,13 +215,17 @@ def main():
 
     print('event (main loop): ', event)
 
+    # Exit the program when the window is closed
+    if event == sg.WIN_CLOSED or event == None:
+      break
 
+    if event == '-BUTTON_OPEN_CONFIG-':
+      open_config()
 
     if event == '-BUTTON_RELOAD_WINDOW-':
       window.close()
-      window = sg.Window(f"{PROGRAM_TITLE} - Reloads: {reloads}", create_layout(network)) # TODO change MOCK_NETWORK in production
+      window = sg.Window(f"{PROGRAM_TITLE} - Reloads: {reloads}", create_main_window_layout(network)) # TODO change MOCK_NETWORK in production
       reloads += 1
-
 
     if event == '-BUTTON_FORCE_NETWORK_UPDATE-':
       print('event: ', event)
@@ -199,7 +234,7 @@ def main():
 
       network = IP_MANAGER.update()
       window.close()
-      window = sg.Window(f"{PROGRAM_TITLE} - Reloads: {reloads}", create_layout(network)) # TODO change MOCK_NETWORK in production
+      window = sg.Window(f"{PROGRAM_TITLE} - Reloads: {reloads}", create_main_window_layout(network)) # TODO change MOCK_NETWORK in production
       # window.refresh()
 
 
@@ -211,9 +246,7 @@ def main():
       sg.popup_no_buttons(f"IP '{client_ip}' copied to clipboard!", no_titlebar=True, auto_close=True, auto_close_duration=2)
 
 
-    # Exit the program when the window is closed
-    if event == sg.WIN_CLOSED:
-      break
+
 
 
   # Close the window and end the program
