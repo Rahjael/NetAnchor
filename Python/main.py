@@ -1,162 +1,334 @@
-import base64
-from cryptography.fernet import Fernet
 import json
 import os
-import re
-import requests
 import schedule
 import time
-from typing import Union
 from tqdm import tqdm
+import PySimpleGUI as sg
+
+from ip_manager import IPManager
 
 config_file_path = os.path.join(os.getcwd(), 'config.json')
 
-if os.path.exists(config_file_path):
-  print('Config file exists.')
-else:
-  raise Exception('Config file not found. Unable to run program.')
-
-print('Loading config...')
-with open(config_file_path, "r") as file:
-  CONFIG = json.load(file)
-print('Config loaded.')
 
 
-#
-# CLASSES DEFINITION
-#
-class IPManager:
-  """Handles IP retrieval, checks and POST requests to the GAS script"""
-  def __init__(self, ip_service: str, gas_script_url: str, gas_auth_code: str, machine_label: str, encryption_key: str):
-    """_summary_
+def load_config(config_file_path) -> str:
+  if os.path.exists(config_file_path):
+    print('Config file exists.')
+  else:
+    raise Exception('Config file not found. Unable to run program.')
 
-    Args:
-      ip_service (str): The service to use for IP retrieval
-      gas_script_url (str): The URL where the GAS script resides
-      gas_auth_code (str): The security password so GAS can accepts requests
-      machine_label (str): The label for this machine
-      encryption_key (str): The encryption key for encrypted requests
+  print('Loading config...')
+  with open(config_file_path, "r") as file:
+    CONFIG = json.load(file)
+  print('Config loaded.')
+  return CONFIG
+
+def save_config(config, config_file_path):
     """
-    self.gas_script_url = gas_script_url
-    self.gas_auth_code = gas_auth_code
-    self.ip_service = ip_service
-    self.machine_label = machine_label
-    self.get_own_ip_attempts = 0
-    self.last_known_ip = None
-    self.encryption_key = encryption_key if encryption_key != '' else Fernet.generate_key()
-    self.network = []
-
-
-  def get_own_ip(self) -> Union[str, None]:
-    """Sends a GET request to the IP retrieval service of choice.
-
-    Returns:
-      Union[str, None]: either the current IP (str) or None if retrieval fails
+    Save the CONFIG dictionary to a JSON file.
     """
-    print('Getting own IP...')
-    try:
-      ip = requests.get(self.ip_service).text
-    except requests.exceptions.RequestException as e:
-      print(e)
-      ip = None
-    return ip
-
-  def send_ip_to_gas(self, current_ip: str) -> None:
-    print('Sending own IP to GAS...')
-    address = self.gas_script_url
-    headers = {'Content-Type': 'application/json'}
-    ip_to_send = self.encrypt_str(current_ip) if CONFIG['USE_ENCRYPTED_DATABASE'] else current_ip
-    machine_label = self.encrypt_str(self.machine_name) if CONFIG['USE_ENCRYPTED_DATABASE'] else self.machine_label
-
-    data = {
-      'authCode': self.gas_auth_code,
-      # TODO "serviceName" should be changed to "machineLabel", but we have to sync this change with GAS routes or the program breaks
-      'serviceName': machine_label,
-      'requestType': 'UPDATE_IP',
-      'ip': ip_to_send,
-    }
-    print(f'Sending this to GAS: ', data)
-    response = requests.post(address, headers=headers, data=json.dumps(data))
-    print('Response from server: ', response.text)
-
-  def update(self) -> None:
-    self.get_own_ip_attempts += 1
-    current_ip = self.get_own_ip()
-
-    if current_ip is None:
-      print("Unable to retrieve IP")
-    elif not self.is_valid_ipv4(current_ip):
-      print(f'Failed to retrieve valid ip address ({self.get_own_ip_attempts} tries)')
-    elif current_ip != self.last_known_ip:
-      print(f'IP changed to {current_ip}')
-      self.send_ip_to_gas(current_ip)
-      self.last_known_ip = current_ip
-    else:
-      print(f'IP has not changed since last check. ({current_ip}/{self.last_known_ip})')
-    self.get_own_ip_attempts = 0
-    self.get_network_from_GAS()
-
-  def get_network_from_GAS(self) -> None:
-    print('Requesting network to GAS...')
-    address = self.gas_script_url
-    headers = {'Content-Type': 'application/json'}
-    data = {
-      'authCode': self.gas_auth_code,
-      'serviceName': self.machine_label,
-      'requestType': 'REQUEST_NETWORK',
-      'ip': self.last_known_ip,
-    }
-    response = requests.post(address, headers=headers, data=json.dumps(data))
-    print('Response from server: ', response.text)
-    
-    fetched_network = [[value[0], value[1]] for value in json.loads(response.content)['value']]
-
-    for record in fetched_network:
-      if not self.is_valid_ipv4(record[1]):
-        print('IP is encrypted. Decoding...')
-        # TODO an error is raised if the encryption key is wrong.
-        decoded_ip = self.decrypt_str(record[1])
-        if self.is_valid_ipv4(decoded_ip):
-          print('IP decoded.')
-          record[1] = decoded_ip
-        else:
-          raise Exception('Error decrypting IP')
-        
-    self.network = fetched_network
-    print('Network: ', self.network)
-
-  def is_valid_ipv4(self, ip: str) -> bool:
-    pattern = r"^(?:\d{1,3}\.){3}\d{1,3}$"
-    return bool(re.match(pattern, ip))
-
-  def encrypt_str(self, string_to_encrypt: str) -> str:
-    cipher_suite = Fernet(self.encryption_key)
-    encrypted_bytes = cipher_suite.encrypt(string_to_encrypt.encode())
-    return encrypted_bytes.decode()
-  
-  def decrypt_str(self, string_to_decrypt: str) -> str:
-    cipher_suite = Fernet(self.encryption_key)
-    decrypted_bytes = cipher_suite.decrypt(string_to_decrypt.encode())
-    return decrypted_bytes.decode()
+    print('Saving config...')
+    with open(config_file_path, "w") as file:
+        json.dump(config, file, indent=4)
+    print('Config saved.')
 
 
+CONFIG = load_config(config_file_path)
 
-#
-# RUNTIME
-#
 print('Program started')
 
-IP_MANAGER = IPManager(CONFIG['IP_SERVICE'], CONFIG['GAS_SCRIPT_URL'], CONFIG['GAS_AUTHCODE'], CONFIG['MACHINE_NAME'], CONFIG['IP_ENCRYPTION_KEY'])
+
+PROGRAM_TITLE = "NetAnchor - v0.1.0"
 
 
-# if a new key is generated, we write it to the config.json
-if CONFIG['IP_ENCRYPTION_KEY'] == '':
-  CONFIG['IP_ENCRYPTION_KEY'] = IP_MANAGER.encryption_key.decode()
-  print(f'Saving new key: ', CONFIG['IP_ENCRYPTION_KEY'])
-  with open('config.json', 'w') as config_file:
-    json.dump(CONFIG, config_file)
 
-IP_MANAGER.update()
+
+
+
+
+
+
+
+
+# MOCK_NETWORK = [
+#   ['OFFICE_PC', '151.83.33.126'],
+#   ['MAIN_PC', '151.83.58.105'],
+#   ['LAPTOP', '93.47.230.0'],
+#   ['iOS_LAPTOP', '151.41.127.145'],
+#   ['NAS', '151.40.127.63'],
+#   ['HOME_DESKTOP', '151.83.20.187'],
+#   ['SELF_HOSTED_WEBSERVER', '151.83.42.33']
+# ]
+
+
+
+MOCK_NETWORK = [
+  ['Network', 'empty']
+]
+
+MOCK_LOGS = [
+   "Connection established.",
+   "blablabla info",
+   "something went wrong, pc will now explode"
+]
+
+
+def create_main_window_layout(network):
+    """
+    Create the layout for the GUI window.
+    """
+
+    print('Creating layout for network: ', network)
+
+    # Text version
+    network_frame_rows = []
+    for i, entry in enumerate(network):
+      network_frame_rows.append([sg.Text(entry[0], key=f'-CLIENT_{i}_LABEL-', expand_x=True), sg.Text(entry[1], key=f'-CLIENT_{i}_IP-'), sg.Button("Copy", key=f'-BUTTON_COPY_IP_{i}-')])
+
+    # ListBox version
+    # network_frame_rows = [[sg.Listbox([f'{entry[0]}: {entry[1]}' for entry in network], key='-CLIENTS-', enable_events=True, size=(50, 10))]]
+
+
+
+    print('network_frame_rows: ', network_frame_rows)
+
+
+
+
+    network_frame = sg.Frame('Network', network_frame_rows, key='-NETWORK_FRAME-')
+
+    
+    log_frame_rows = [[sg.Text(row)] for row in MOCK_LOGS] # TODO need dynamic logs. implement a Logger class? Observer maybe?
+
+    log_frame = sg.Frame('Log', log_frame_rows)
+
+
+    links_column = sg.Column([
+      [sg.Text("Download TightVNC")],
+      [sg.Text("Open sheet in Google Drive")],
+      [sg.Text("Donate")],
+      [sg.Text("Github")],
+    ], element_justification='r', expand_x=True)
+
+
+    upper_row = [network_frame, sg.Push(), sg.Button('Open config', key='-BUTTON_OPEN_CONFIG-'), sg.Button('Update now', key='-BUTTON_FORCE_NETWORK_UPDATE-'), sg.Push()]
+    lower_row = [log_frame, links_column]
+
+
+
+    progress_bar = [sg.ProgressBar(100)]
+
+    status_bar = [sg.StatusBar("Current IP: 156.562.369.53 | Time to next update: 9m16s")]
+
+
+
+    layout = [
+       upper_row,
+       progress_bar,
+       lower_row,
+       status_bar,
+    ]
+    return layout
+
+
+
+def splash_window():
+  layout = [
+    [sg.VPush()],
+    [sg.Push(), sg.Text(PROGRAM_TITLE), sg.Push()],
+    [sg.VPush()],
+    [sg.Text("Fetching network, please wait a few seconds...")]
+  ]
+  window = sg.Window(f"{PROGRAM_TITLE} - Splash Screen", layout)
+  window.read(timeout=0) # ! this is a blocking function until an event is triggered. Set a timeout (ms)
+  return window
+
+
+
+
+def open_config():
+  global CONFIG
+
+  # TODO finish this
+    # "GAS_SCRIPT_URL": "https://script.google.com/macros/s/AKfycbzlxDo4MBRgXPUQ6KCxBD9k9gIlLNBz3ZgpbyCqVCaP5sBAvwO6PXWgpbSKnjFHPZs/exec",
+    # "GAS_AUTHCODE": "k6idf8alf9asdkwer0sasg334",
+    # "IP_UPDATE_INTERVAL": 10,
+    # "MACHINE_NAME": "HOME_DESKTOP",
+    # "IP_SERVICE": "https://api.ipify.org",
+    # "USE_ENCRYPTED_DATABASE": false,
+    # "IP_ENCRYPTION_KEY": "ZPVU06_oHGNe8hFb5AVG9-QqjZI42VgYaHOowOW7bUY="
+  layout = [
+    [sg.Push(), sg.Text("Settings"), sg.Push()],
+    [sg.Text('GAS script url:'), sg.Input(CONFIG['GAS_SCRIPT_URL'], key='-GAS_SCRIPT_URL-', expand_x=True)],
+    [sg.Text('GAS AuthCode:'), sg.Input(CONFIG['GAS_AUTHCODE'], key='-GAS_AUTHCODE-', expand_x=True)],
+    [sg.Text('Network update interval (secs):'), sg.Input(CONFIG['IP_UPDATE_INTERVAL'], key='-IP_UPDATE_INTERVAL-', expand_x=True)],
+    [sg.Text('Machine label:'), sg.Input(CONFIG['MACHINE_NAME'], key='-MACHINE_LABEL-', expand_x=True)],
+    [sg.Text('IP retrieval service:'), sg.Input(CONFIG['IP_SERVICE'], key='-IP_SERVICE-', expand_x=True)],
+    [sg.Text('Use encrypted database:'), sg.Checkbox('', default=bool(CONFIG['USE_ENCRYPTED_DATABASE']), key='-USE_ENCRYPTED_DATABASE-', expand_x=True)],
+    [sg.Text('Encryption key:'), sg.Input(CONFIG['IP_ENCRYPTION_KEY'], key='-IP_ENCRYPTION_KEY-', expand_x=True)],
+    [sg.Button('Discard changes'), sg.Button('Save changes', key='-SAVE-', expand_x=True)],
+  ]
+  window = sg.Window(f'{PROGRAM_TITLE} - Config', layout)
+  event, values = window.read() # ! this is a blocking function until an event is triggered.
+
+  print('event of settings: ', event)
+  print('values of settings: ', values)
+
+  if event == '-SAVE-':
+    CONFIG['GAS_SCRIPT_URL'] = values['-GAS_SCRIPT_URL-']
+    CONFIG['GAS_AUTHCODE'] = values['-GAS_AUTHCODE-']
+    CONFIG['IP_UPDATE_INTERVAL'] = values['-IP_UPDATE_INTERVAL-']
+    CONFIG['MACHINE_NAME'] = values['-MACHINE_LABEL-']
+    CONFIG['IP_SERVICE'] = values['-IP_SERVICE-']
+    CONFIG['USE_ENCRYPTED_DATABASE'] = values['-USE_ENCRYPTED_DATABASE-']
+    CONFIG['IP_ENCRYPTION_KEY'] = values['-IP_ENCRYPTION_KEY-']
+
+    save_config(CONFIG, config_file_path)
+    window.close()
+
+  else:
+    window.close()
+  
+
+
+
+
+
+
+
+
+
+# TODO generate_random_authcode()
+
+
+
+
+
+def main():
+  IP_MANAGER = IPManager(CONFIG)
+
+  # if a new key is generated, we write it to the config.json
+  if CONFIG['IP_ENCRYPTION_KEY'] == '':
+    CONFIG['IP_ENCRYPTION_KEY'] = IP_MANAGER.encryption_key.decode()
+    print(f'Saving new key: ', CONFIG['IP_ENCRYPTION_KEY'])
+    with open('config.json', 'w') as config_file:
+      json.dump(CONFIG, config_file)
+
+  # IP_MANAGER.update()
+
+
+
+
+
+  
+  sg.theme("DefaultNoMoreNagging")  # Choose a theme for the window
+
+  
+  # Event loop to process events and update the window
+  first_loop = True
+  reloads = 0
+
+  while True:
+    if first_loop == True:
+      window = splash_window()
+      network = IP_MANAGER.update()
+      window.close()
+      window = sg.Window(f"{PROGRAM_TITLE} - Reloads: {reloads}", create_main_window_layout(network))
+      first_loop = False
+
+    event, values = window.read(timeout=100000) # ! this is a blocking function until an event is triggered. Set a timeout (ms)
+
+
+    # TODO implement regular IP_MANAGER.update()s using:
+    # TODO https://www.pysimplegui.org/en/latest/call%20reference/#window-the-window-object
+    # TODO look for "timer_start" method
+
+
+    print('event (main loop): ', event)
+
+    # Exit the program when the window is closed
+    if event == sg.WIN_CLOSED or event == None:
+      break
+
+    if event == '-BUTTON_OPEN_CONFIG-':
+      open_config()
+
+    if event == '-BUTTON_RELOAD_WINDOW-':
+      window.close()
+      window = sg.Window(f"{PROGRAM_TITLE} - Reloads: {reloads}", create_main_window_layout(network)) # TODO change MOCK_NETWORK in production
+      reloads += 1
+
+    if event == '-BUTTON_FORCE_NETWORK_UPDATE-':
+      print('event: ', event)
+      window['-BUTTON_FORCE_NETWORK_UPDATE-'].update('Updating...', disabled=True)
+      window.refresh()
+
+      network = IP_MANAGER.update()
+      window.close()
+      window = sg.Window(f"{PROGRAM_TITLE} - Reloads: {reloads}", create_main_window_layout(network)) # TODO change MOCK_NETWORK in production
+      # window.refresh()
+
+
+    if event.startswith("-BUTTON_COPY_IP_"):
+      print('event: ', event)
+      index = int(event.split("_")[3].replace('-', ''))
+      client_ip = window[f'-CLIENT_{index}_IP-'].get()
+      sg.clipboard_set(client_ip)
+      sg.popup_no_buttons(f"IP '{client_ip}' copied to clipboard!", no_titlebar=True, auto_close=True, auto_close_duration=2)
+
+
+
+
+
+  # Close the window and end the program
+  window.close()
+
+
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+quit()
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

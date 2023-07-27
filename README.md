@@ -59,11 +59,20 @@ NetAnchor updates the IP table on Google Sheet using App Script, each device is 
 ## Roadmap
 
 - [x] Working with console logs
-- [ ] Basic UI
+- [x] Basic UI
+  - [ ] Custom configs through UI settings
+- [ ] "Installation package" for GAS. Try to make it as simple as possible to set things up
+- [ ] "Doomsday recovery" for GAS. From a button in the Python UI, be able to reset the Sheet's structure in case the user messes it up manually on Google Drive
 - [ ] Encryption fix
-- [ ] Custom configs through UI settings
 - [ ] Google Marketplace Add-On to streamline the installation process
 
 ## Suggested Tools
 - [TightVNC](https://www.tightvnc.com/download.html) for remote access
 - [ipfy API](https://www.ipify.org/) is used for retrieving the IPs
+
+
+
+
+## Changelog
+
+- 2023/07/? - (TODO) Release v0.1.0 (beta)
