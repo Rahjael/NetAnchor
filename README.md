@@ -60,7 +60,8 @@ NetAnchor updates the IP table on Google Sheet using App Script, each device is 
 
 - [x] Working with console logs
 - [x] Basic UI
-  - [ ] Custom configs through UI settings
+  - [x] Custom configs through UI settings
+  - [ ] Implement Logger
 - [ ] "Installation package" for GAS. Try to make it as simple as possible to set things up
 - [ ] "Doomsday recovery" for GAS. From a button in the Python UI, be able to reset the Sheet's structure in case the user messes it up manually on Google Drive
 - [ ] Encryption fix
