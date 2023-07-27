@@ -50,7 +50,7 @@ class IPManager:
     address = self.gas_script_url
     headers = {'Content-Type': 'application/json'}
     ip_to_send = self.encrypt_str(current_ip) if self.CONFIG['USE_ENCRYPTED_DATABASE'] else current_ip
-    machine_label = self.encrypt_str(self.machine_label) if self.CONFIG['USE_ENCRYPTED_DATABASE'] else current_ip
+    machine_label = self.encrypt_str(self.machine_label) if self.CONFIG['USE_ENCRYPTED_DATABASE'] else self.machine_label
 
     data = {
       'authCode': self.gas_auth_code,
