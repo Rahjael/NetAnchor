@@ -58,13 +58,20 @@ NetAnchor updates the IP table on Google Sheet using App Script, each device is 
 
 ## Roadmap
 
+
+Mandatory for v0.1.0 release:
+- [x] IPv4 support
 - [x] Working with console logs
 - [x] Basic UI
   - [x] Custom configs through UI settings
-  - [ ] Implement Logger
+  - [x] Implement Logger
+- [ ] Autocheck for updates (dedicated GAS repo for the project)
+
+Later on:
 - [ ] "Installation package" for GAS. Try to make it as simple as possible to set things up
 - [ ] "Doomsday recovery" for GAS. From a button in the Python UI, be able to reset the Sheet's structure in case the user messes it up manually on Google Drive
-- [ ] Encryption fix
+- [ ] Encryption of transmitted data
+- [ ] IPv6 support
 - [ ] Google Marketplace Add-On to streamline the installation process
 
 ## Suggested Tools
@@ -76,4 +83,4 @@ NetAnchor updates the IP table on Google Sheet using App Script, each device is 
 
 ## Changelog
 
-- 2023/07/? - (TODO) Release v0.1.0 (beta)
+- 2023/07/? - (TODO) Release v0.1.0 (beta) (to update when ready)
