@@ -89,12 +89,6 @@ def create_main_window_layout(network):
     # network_frame_rows = [[sg.Listbox([f'{entry[0]}: {entry[1]}' for entry in network], key='-CLIENTS-', enable_events=True, size=(50, 10))]]
 
 
-
-    print('network_frame_rows: ', network_frame_rows)
-
-
-
-
     network_frame = sg.Frame('Network', network_frame_rows, key='-NETWORK_FRAME-')
 
     
