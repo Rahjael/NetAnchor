@@ -135,3 +135,6 @@ class IPManager:
 
   def get_network(self):
     return self.network
+  
+  def get_current_ip(self):
+    return self.last_known_ip
