@@ -1,10 +1,10 @@
+from datetime import datetime
 import json
 import os
 import random
 import schedule
 import string
-import time
-from tqdm import tqdm
+import tkinter.font as tkFont
 import PySimpleGUI as sg
 
 from ip_manager import IPManager
@@ -35,15 +35,21 @@ def save_config(config, CONFIG_FILE_PATH):
         json.dump(config, file, indent=4)
     LOGGER.log('Config saved.')
 
-def create_main_window_layout(network):
+def create_main_window_layout():
 
     # LOGGER.log('Creating layout for network: ', IP_MANAGER.get_network())
 
-    # Text version
+    # Text version    
+    # Create a font with the same family and size but bold style
+    default_font = sg.DEFAULT_FONT[0]
+    default_size = sg.DEFAULT_FONT[1]
+    bold_font = tkFont.Font(family=default_font, size=default_size, weight="bold", slant="italic")
+
+    # Create network list, bold our current IP and LABEL
     network_frame_rows = []
-    for i, entry in enumerate(network):
-        network_frame_rows.append([sg.Text(entry[0], key=f'-CLIENT_{i}_LABEL-', expand_x=True), sg.Text(
-            entry[1], key=f'-CLIENT_{i}_IP-'), sg.Button("Copy", key=f'-BUTTON_COPY_IP_{i}-')])
+    for i, entry in enumerate(IP_MANAGER.get_network()):
+        network_frame_rows.append([sg.Text(entry[0], key=f'-CLIENT_{i}_LABEL-', expand_x=True, font=(bold_font if entry[1] == IP_MANAGER.get_current_ip() else None)), sg.Text(
+            entry[1], key=f'-CLIENT_{i}_IP-', font=(bold_font if entry[1] == IP_MANAGER.get_current_ip() else None)), sg.Button("Copy", key=f'-BUTTON_COPY_IP_{i}-')])
 
     # ListBox version
     # network_frame_rows = [[sg.Listbox([f'{entry[0]}: {entry[1]}' for entry in network], key='-CLIENTS-', enable_events=True, size=(50, 10))]]
@@ -76,20 +82,21 @@ def create_main_window_layout(network):
     upper_row = [upper_row_left_column, upper_row_right_column]
     lower_row = [log_frame]
 
-    status_bar = [sg.StatusBar(
-        f"Current IP: {IP_MANAGER.get_current_ip()} | Time to next update: 9m16s")] # TODO fix this
+    status_bar = [sg.Text(f"Current IP: {IP_MANAGER.get_current_ip()}", key='-CURRENT_IP-'), sg.Push(), sg.Text(f"Time to next update: Unknown", key='-TIMER-')]
 
     layout = [
         upper_row,
         lower_row,
+        [sg.HorizontalSeparator()],
         status_bar,
     ]
 
     return layout
 
-def get_main_window(PROGRAM_TITLE, network):
-    window = sg.Window(f"{PROGRAM_TITLE}",
-                       create_main_window_layout(network), resizable=True)
+def get_main_window():
+    global PROGRAM_TITLE
+
+    window = sg.Window(f"{PROGRAM_TITLE}", create_main_window_layout(), resizable=False)
     return window
 
 def splash_window():
@@ -142,7 +149,7 @@ def open_config_window() -> bool:
         CONFIG['MAX_UI_LOGS'] = int(values['-MAX_UI_LOGS-'])
 
         save_config(CONFIG, CONFIG_FILE_PATH)
-        IP_MANAGER = IPManager(CONFIG, LOGGER, IP_MANAGER.get_network())
+        IP_MANAGER = IPManager(CONFIG, LOGGER, IP_MANAGER.get_network(), IP_MANAGER.get_current_ip())
         window.close()
         return True
     else:
@@ -157,9 +164,16 @@ def update_ip_manager():
     '''
         This is to allow the scheduled task to always call the current instance of IP_MANAGER
     '''
+    global MAIN_WINDOW
+    global IP_MANAGER
+
     IP_MANAGER.update()
+    MAIN_WINDOW.close()
+    MAIN_WINDOW = get_main_window()
 
 def main():
+    global MAIN_WINDOW
+
     # if a new key is generated, we write it to the config.json
     if CONFIG['IP_ENCRYPTION_KEY'] == '':
         CONFIG['IP_ENCRYPTION_KEY'] = IP_MANAGER.encryption_key.decode()
@@ -176,19 +190,22 @@ def main():
 
     while True:
         if first_loop == True:
-            window = splash_window()
+            splash_w = splash_window()
             IP_MANAGER.update()
-            window.close()
-            window = get_main_window(PROGRAM_TITLE, IP_MANAGER.get_network())
+            splash_w.close()
+            MAIN_WINDOW = get_main_window()
             first_loop = False
 
-        event, values = window.read(timeout=5000) # ! this is a blocking function until an event is triggered. Set a timeout (ms)
+        event, values = MAIN_WINDOW.read(timeout=500) # ! this is a blocking function until an event is triggered. Set a timeout (ms)
 
-        schedule.run_pending() # TODO network update should trigger window refresh
+        schedule.run_pending()
 
-        # TODO implement regular IP_MANAGER.update()s using:
-        # TODO https://www.pysimplegui.org/en/latest/call%20reference/#window-the-window-object
-        # TODO look for "timer_start" method
+        # Update timer till next network update
+        time_to_next_update = schedule.next_run() - datetime.now()
+        m, s = divmod(time_to_next_update.total_seconds(), 60)
+        MAIN_WINDOW.finalize()
+        MAIN_WINDOW['-TIMER-'].update(value=f"Time to next update: {int(m):02}:{int(s):02}")
+
 
         # LOGGER.log('event (main loop): ', event)
 
@@ -197,31 +214,31 @@ def main():
             break
         elif event == '-BUTTON_OPEN_CONFIG-':
             if open_config_window():  # opens config window and returns True if config is saved
-                window.close()
-                window = get_main_window(PROGRAM_TITLE, IP_MANAGER.get_network())
+                MAIN_WINDOW.close()
+                MAIN_WINDOW = get_main_window()
         elif event == '-BUTTON_RELOAD_WINDOW-':
-            window.close()
-            window = get_main_window(PROGRAM_TITLE, IP_MANAGER.get_network())
+            MAIN_WINDOW.close()
+            MAIN_WINDOW = get_main_window()
         elif event == '-BUTTON_FORCE_NETWORK_UPDATE-':
-            window['-BUTTON_FORCE_NETWORK_UPDATE-'].update(
+            MAIN_WINDOW['-BUTTON_FORCE_NETWORK_UPDATE-'].update(
                 'Updating...', disabled=True)
-            network = IP_MANAGER.update()
-            window.close()
-            window = get_main_window(PROGRAM_TITLE, IP_MANAGER.get_network())
+            IP_MANAGER.update()
+            MAIN_WINDOW.close()
+            MAIN_WINDOW = get_main_window()
         elif event.startswith("-BUTTON_COPY_IP_"):
             index = int(event.split("_")[3].replace('-', ''))
-            client_ip = window[f'-CLIENT_{index}_IP-'].get()
+            client_ip = MAIN_WINDOW[f'-CLIENT_{index}_IP-'].get()
             sg.clipboard_set(client_ip)
             LOGGER.log(f"IP '{client_ip}' copied to clipboard!")
 
         # Update logs listbox and refresh window no matter the event
-        window.finalize()
+        MAIN_WINDOW.finalize()
         log_rows = [row for row in LOGGER.get_logs_as_strings()]
-        window['-LOGS_LISTBOX-'].update(values=log_rows)
-        window.refresh()
+        MAIN_WINDOW['-LOGS_LISTBOX-'].update(values=log_rows)
+        MAIN_WINDOW.refresh()
 
     # Close the window and end the program
-    window.close()
+    MAIN_WINDOW.close()
 
 
 
@@ -238,7 +255,7 @@ CONFIG_FILE_PATH = os.path.join(os.getcwd(), 'config.json')
 LOGGER = Logger()
 CONFIG = load_config(CONFIG_FILE_PATH)
 IP_MANAGER = IPManager(CONFIG, LOGGER)
-MAIN_WINDOW = None
+MAIN_WINDOW = None # Main window is in the global scope so that it's easier to refresh it when a scheduled task runs
 
 LOGGER.log('Program started')
 PROGRAM_TITLE = f"NetAnchor - {CONFIG['UI_VERSION']}"
