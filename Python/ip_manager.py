@@ -9,13 +9,13 @@ from typing import Union
 
 class IPManager:
   """Handles IP retrieval, checks and POST requests to the GAS script"""
-  def __init__(self, CONFIG: dict, logger=None):
+  def __init__(self, CONFIG: dict, logger=None, network=[]):
     """_summary_
 
     Args:
       ip_service (str): The service to use for IP retrieval
       gas_script_url (str): The URL where the GAS script resides
-      gas_auth_code (str): The security password so GAS can accepts requests
+      gas_auth_code (str): The security password so GAS can accept requests
       machine_label (str): The label for this machine
       encryption_key (str): The encryption key for encrypted requests
     """
@@ -28,7 +28,7 @@ class IPManager:
     self.get_own_ip_attempts = 0
     self.last_known_ip = None
     self.encryption_key = CONFIG['IP_ENCRYPTION_KEY'] if CONFIG['IP_ENCRYPTION_KEY'] != '' else Fernet.generate_key()
-    self.network = []
+    self.network = network # this is useful to update this instance coming from another one (check open_config_window() in main.py)
     self.logger = logger
 
     if logger == None:
