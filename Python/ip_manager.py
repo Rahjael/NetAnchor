@@ -9,7 +9,7 @@ from typing import Union
 
 class IPManager:
   """Handles IP retrieval, checks and POST requests to the GAS script"""
-  def __init__(self, CONFIG: dict):
+  def __init__(self, CONFIG: dict, logger=None):
     """_summary_
 
     Args:
@@ -29,6 +29,10 @@ class IPManager:
     self.last_known_ip = None
     self.encryption_key = CONFIG['IP_ENCRYPTION_KEY'] if CONFIG['IP_ENCRYPTION_KEY'] != '' else Fernet.generate_key()
     self.network = []
+    self.logger = logger
+
+    if logger == None:
+      raise Exception('Logger not set. Exiting program.')
 
 
   def get_own_ip(self) -> Union[str, None]:

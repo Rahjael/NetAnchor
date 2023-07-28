@@ -1,14 +1,19 @@
 import json
 import os
+import random
 import schedule
 import time
 from tqdm import tqdm
 import PySimpleGUI as sg
 
 from ip_manager import IPManager
+from logger import Logger
+
+
+
+LOGGER = Logger()
 
 config_file_path = os.path.join(os.getcwd(), 'config.json')
-
 
 
 def load_config(config_file_path) -> str:
@@ -69,14 +74,23 @@ MOCK_NETWORK = [
 MOCK_LOGS = [
    "Connection established.",
    "blablabla info",
-   "something went wrong, pc will now explode"
+   "something went wrong, pc will now explode",
+   'Server response: invalid',
+   'Machine "Home server" removed from network',
+   'IP updated. New IP: 134.23.234.56',
+   'blabalbla'
 ]
+
+
+
 
 
 def create_main_window_layout(network):
     """
     Create the layout for the GUI window.
     """
+
+    random.shuffle(MOCK_LOGS) # TODO remove in production
 
     print('Creating layout for network: ', network)
 
@@ -92,21 +106,26 @@ def create_main_window_layout(network):
     network_frame = sg.Frame('Network', network_frame_rows, key='-NETWORK_FRAME-')
 
     
-    log_frame_rows = [[sg.Text(row)] for row in MOCK_LOGS] # TODO need dynamic logs. implement a Logger class? Observer maybe?
+    log_rows = [row for row in MOCK_LOGS][:CONFIG['MAX_UI_LOGS']]
+    log_frame_rows = [[sg.Listbox(log_rows, size=(None, CONFIG['MAX_UI_LOGS']), no_scrollbar=True, disabled=True, expand_x=True)]] # TODO need dynamic logs. implement a Logger class? Observer maybe?
 
-    log_frame = sg.Frame('Log', log_frame_rows)
+    log_frame = sg.Frame('Log', log_frame_rows, expand_x=True)
 
 
-    links_column = sg.Column([
-      [sg.Text("Download TightVNC")],
-      [sg.Text("Open sheet in Google Drive")],
+    upper_row_right_column = sg.Column([
+      [sg.Button('Update now', key='-BUTTON_FORCE_NETWORK_UPDATE-')],
+      [sg.Button('Open config', key='-BUTTON_OPEN_CONFIG-')],
+      [sg.Button('Reload window', key='-BUTTON_RELOAD_WINDOW-')],
+      # [sg.Text("Download TightVNC")],
+      # [sg.Text("Open sheet in Google Drive")],
+      [sg.VPush()],
       [sg.Text("Donate")],
       [sg.Text("Github")],
-    ], element_justification='r', expand_x=True)
+    ], element_justification='r', expand_x=True, expand_y=True)
 
 
-    upper_row = [network_frame, sg.Push(), sg.Button('Open config', key='-BUTTON_OPEN_CONFIG-'), sg.Button('Update now', key='-BUTTON_FORCE_NETWORK_UPDATE-'), sg.Push()]
-    lower_row = [log_frame, links_column]
+    upper_row = [network_frame, upper_row_right_column]
+    lower_row = [log_frame]
 
 
 
@@ -140,7 +159,7 @@ def splash_window():
 
 
 
-def open_config():
+def open_config() -> bool:
   global CONFIG
 
   # TODO finish this
@@ -155,11 +174,12 @@ def open_config():
     [sg.Push(), sg.Text("Settings"), sg.Push()],
     [sg.Text('GAS script url:'), sg.Input(CONFIG['GAS_SCRIPT_URL'], key='-GAS_SCRIPT_URL-', expand_x=True)],
     [sg.Text('GAS AuthCode:'), sg.Input(CONFIG['GAS_AUTHCODE'], key='-GAS_AUTHCODE-', expand_x=True)],
-    [sg.Text('Network update interval (secs):'), sg.Input(CONFIG['IP_UPDATE_INTERVAL'], key='-IP_UPDATE_INTERVAL-', expand_x=True)],
+    [sg.Text('Network update interval (secs):'), sg.Input(str(CONFIG['IP_UPDATE_INTERVAL']), key='-IP_UPDATE_INTERVAL-', expand_x=True)],
     [sg.Text('Machine label:'), sg.Input(CONFIG['MACHINE_NAME'], key='-MACHINE_LABEL-', expand_x=True)],
     [sg.Text('IP retrieval service:'), sg.Input(CONFIG['IP_SERVICE'], key='-IP_SERVICE-', expand_x=True)],
     [sg.Text('Use encrypted database:'), sg.Checkbox('', default=bool(CONFIG['USE_ENCRYPTED_DATABASE']), key='-USE_ENCRYPTED_DATABASE-', expand_x=True)],
     [sg.Text('Encryption key:'), sg.Input(CONFIG['IP_ENCRYPTION_KEY'], key='-IP_ENCRYPTION_KEY-', expand_x=True)],
+    [sg.Text('Max logs to show:'), sg.Input(str(CONFIG['MAX_UI_LOGS']), key='-MAX_UI_LOGS-', expand_x=True)],
     [sg.Button('Discard changes'), sg.Button('Save changes', key='-SAVE-', expand_x=True)],
   ]
   window = sg.Window(f'{PROGRAM_TITLE} - Config', layout)
@@ -171,17 +191,20 @@ def open_config():
   if event == '-SAVE-':
     CONFIG['GAS_SCRIPT_URL'] = values['-GAS_SCRIPT_URL-']
     CONFIG['GAS_AUTHCODE'] = values['-GAS_AUTHCODE-']
-    CONFIG['IP_UPDATE_INTERVAL'] = values['-IP_UPDATE_INTERVAL-']
+    CONFIG['IP_UPDATE_INTERVAL'] = int(values['-IP_UPDATE_INTERVAL-'])
     CONFIG['MACHINE_NAME'] = values['-MACHINE_LABEL-']
     CONFIG['IP_SERVICE'] = values['-IP_SERVICE-']
     CONFIG['USE_ENCRYPTED_DATABASE'] = values['-USE_ENCRYPTED_DATABASE-']
     CONFIG['IP_ENCRYPTION_KEY'] = values['-IP_ENCRYPTION_KEY-']
+    CONFIG['MAX_UI_LOGS'] = int(values['-MAX_UI_LOGS-'])
 
     save_config(CONFIG, config_file_path)
     window.close()
+    return True
 
   else:
     window.close()
+    return False
   
 
 
@@ -199,7 +222,7 @@ def open_config():
 
 
 def main():
-  IP_MANAGER = IPManager(CONFIG)
+  IP_MANAGER = IPManager(CONFIG, LOGGER)
 
   # if a new key is generated, we write it to the config.json
   if CONFIG['IP_ENCRYPTION_KEY'] == '':
@@ -245,7 +268,11 @@ def main():
       break
 
     if event == '-BUTTON_OPEN_CONFIG-':
-      open_config()
+      if open_config(): # returns True if config is saved
+        window.close()
+        window = sg.Window(f"{PROGRAM_TITLE} - Reloads: {reloads}", create_main_window_layout(network)) # TODO change MOCK_NETWORK in production
+        reloads += 1 # TODO remove all the reloads in production
+
 
     if event == '-BUTTON_RELOAD_WINDOW-':
       window.close()
