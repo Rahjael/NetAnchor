@@ -36,7 +36,8 @@ def save_config(config, CONFIG_FILE_PATH):
     LOGGER.log('Config saved.')
 
 def create_main_window_layout(network):
-    # LOGGER.log('Creating layout for network: ', network)
+
+    # LOGGER.log('Creating layout for network: ', IP_MANAGER.get_network())
 
     # Text version
     network_frame_rows = []
@@ -48,12 +49,18 @@ def create_main_window_layout(network):
     # network_frame_rows = [[sg.Listbox([f'{entry[0]}: {entry[1]}' for entry in network], key='-CLIENTS-', enable_events=True, size=(50, 10))]]
 
     network_frame = sg.Frame(
-        'Network', network_frame_rows, key='-NETWORK_FRAME-')
+        'Network', network_frame_rows, key='-NETWORK_FRAME-', expand_x=True)
+
+    upper_row_left_column = sg.Column([
+        [network_frame],
+        [sg.VPush()]
+    ], expand_y=True, expand_x=True)
 
     log_rows = [row for row in LOGGER.get_logs_as_strings()]
     log_frame_rows = [[sg.Listbox(log_rows, size=(None, CONFIG['MAX_UI_LOGS']), key='-LOGS_LISTBOX-',
                                   disabled=False, expand_x=True)]]
     log_frame = sg.Frame('Log', log_frame_rows, expand_x=True)
+
 
     upper_row_right_column = sg.Column([
         [sg.Button('Update now', key='-BUTTON_FORCE_NETWORK_UPDATE-')],
@@ -66,7 +73,7 @@ def create_main_window_layout(network):
         [sg.Text("Github")],
     ], element_justification='r', expand_x=True, expand_y=True)
 
-    upper_row = [network_frame, upper_row_right_column]
+    upper_row = [upper_row_left_column, upper_row_right_column]
     lower_row = [log_frame]
 
     status_bar = [sg.StatusBar(
@@ -97,7 +104,7 @@ def splash_window():
     return window
 
 def open_config_window() -> bool:
-    global CONFIG
+    global IP_MANAGER
 
     layout = [
         [sg.Push(), sg.Text("Config", pad=(0, 50)), sg.Push()],
@@ -135,6 +142,7 @@ def open_config_window() -> bool:
         CONFIG['MAX_UI_LOGS'] = int(values['-MAX_UI_LOGS-'])
 
         save_config(CONFIG, CONFIG_FILE_PATH)
+        IP_MANAGER = IPManager(CONFIG, LOGGER, IP_MANAGER.get_network())
         window.close()
         return True
     else:
@@ -144,6 +152,12 @@ def open_config_window() -> bool:
 def generate_random_authcode() -> str:
     chars = string.ascii_letters + string.digits
     return ''.join(random.choice(chars) for _ in range(20))
+
+def update_ip_manager():
+    '''
+        This is to allow the scheduled task to always call the current instance of IP_MANAGER
+    '''
+    IP_MANAGER.update()
 
 def main():
     # if a new key is generated, we write it to the config.json
@@ -163,14 +177,14 @@ def main():
     while True:
         if first_loop == True:
             window = splash_window()
-            network = IP_MANAGER.update()
+            IP_MANAGER.update()
             window.close()
-            window = get_main_window(PROGRAM_TITLE, network)
+            window = get_main_window(PROGRAM_TITLE, IP_MANAGER.get_network())
             first_loop = False
 
         event, values = window.read(timeout=5000) # ! this is a blocking function until an event is triggered. Set a timeout (ms)
 
-        schedule.run_pending()
+        schedule.run_pending() # TODO network update should trigger window refresh
 
         # TODO implement regular IP_MANAGER.update()s using:
         # TODO https://www.pysimplegui.org/en/latest/call%20reference/#window-the-window-object
@@ -184,16 +198,16 @@ def main():
         elif event == '-BUTTON_OPEN_CONFIG-':
             if open_config_window():  # opens config window and returns True if config is saved
                 window.close()
-                window = get_main_window(PROGRAM_TITLE, network)
+                window = get_main_window(PROGRAM_TITLE, IP_MANAGER.get_network())
         elif event == '-BUTTON_RELOAD_WINDOW-':
             window.close()
-            window = get_main_window(PROGRAM_TITLE, network)
+            window = get_main_window(PROGRAM_TITLE, IP_MANAGER.get_network())
         elif event == '-BUTTON_FORCE_NETWORK_UPDATE-':
             window['-BUTTON_FORCE_NETWORK_UPDATE-'].update(
                 'Updating...', disabled=True)
             network = IP_MANAGER.update()
             window.close()
-            window = get_main_window(PROGRAM_TITLE, network)
+            window = get_main_window(PROGRAM_TITLE, IP_MANAGER.get_network())
         elif event.startswith("-BUTTON_COPY_IP_"):
             index = int(event.split("_")[3].replace('-', ''))
             client_ip = window[f'-CLIENT_{index}_IP-'].get()
@@ -224,12 +238,13 @@ CONFIG_FILE_PATH = os.path.join(os.getcwd(), 'config.json')
 LOGGER = Logger()
 CONFIG = load_config(CONFIG_FILE_PATH)
 IP_MANAGER = IPManager(CONFIG, LOGGER)
+MAIN_WINDOW = None
 
 LOGGER.log('Program started')
 PROGRAM_TITLE = f"NetAnchor - {CONFIG['UI_VERSION']}"
 
 # Schedule the updating task
-schedule.every(CONFIG['IP_UPDATE_INTERVAL']).minutes.do(IP_MANAGER.update)
+schedule.every(CONFIG['IP_UPDATE_INTERVAL']).minutes.do(update_ip_manager)
 
 
 if __name__ == "__main__":
