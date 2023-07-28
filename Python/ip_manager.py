@@ -9,7 +9,7 @@ from typing import Union
 
 class IPManager:
   """Handles IP retrieval, checks and POST requests to the GAS script"""
-  def __init__(self, CONFIG: dict, logger=None, network=[]):
+  def __init__(self, CONFIG: dict, logger=None, network=[], last_known_ip=None):
     """_summary_
 
     Args:
@@ -26,7 +26,7 @@ class IPManager:
     self.ip_service = CONFIG['IP_SERVICE']
     self.machine_label = CONFIG['MACHINE_NAME']
     self.get_own_ip_attempts = 0
-    self.last_known_ip = None
+    self.last_known_ip = last_known_ip
     self.encryption_key = CONFIG['IP_ENCRYPTION_KEY'] if CONFIG['IP_ENCRYPTION_KEY'] != '' else Fernet.generate_key()
     self.network = network # this is useful to update this instance coming from another one (check open_config_window() in main.py)
     self.logger = logger
@@ -75,12 +75,12 @@ class IPManager:
       self.logger.log("Unable to retrieve IP")
     elif not self.is_valid_ipv4(current_ip):
       self.logger.log(f'Failed to retrieve valid ip address ({self.get_own_ip_attempts} tries)')
-    elif current_ip != self.last_known_ip:
-      self.logger.log(f'IP changed to {current_ip}')
+    # elif current_ip != self.last_known_ip:
+    elif self.is_valid_ipv4(current_ip):
       self.send_ip_to_gas(current_ip)
       self.last_known_ip = current_ip
-    else:
-      self.logger.log(f'IP has not changed since last check. ({current_ip}/{self.last_known_ip})')
+    # else:
+    #   self.logger.log(f'IP has not changed since last check. ({current_ip}/{self.last_known_ip})')
     
     self.get_own_ip_attempts = 0
     return self.get_network_from_GAS()
