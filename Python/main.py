@@ -18,29 +18,29 @@ config_file_path = os.path.join(os.getcwd(), 'config.json')
 
 def load_config(config_file_path) -> str:
   if os.path.exists(config_file_path):
-    print('Config file exists.')
+    LOGGER.log('Config file exists.')
   else:
     raise Exception('Config file not found. Unable to run program.')
 
-  print('Loading config...')
+  LOGGER.log('Loading config...')
   with open(config_file_path, "r") as file:
     CONFIG = json.load(file)
-  print('Config loaded.')
+  LOGGER.log('Config loaded.')
   return CONFIG
 
 def save_config(config, config_file_path):
     """
     Save the CONFIG dictionary to a JSON file.
     """
-    print('Saving config...')
+    LOGGER.log('Saving config...')
     with open(config_file_path, "w") as file:
         json.dump(config, file, indent=4)
-    print('Config saved.')
+    LOGGER.log('Config saved.')
 
 
 CONFIG = load_config(config_file_path)
 
-print('Program started')
+LOGGER.log('Program started')
 
 
 PROGRAM_TITLE = "NetAnchor - v0.1.0"
@@ -90,9 +90,8 @@ def create_main_window_layout(network):
     Create the layout for the GUI window.
     """
 
-    random.shuffle(MOCK_LOGS) # TODO remove in production
 
-    print('Creating layout for network: ', network)
+    LOGGER.log('Creating layout for network: ', network)
 
     # Text version
     network_frame_rows = []
@@ -106,8 +105,8 @@ def create_main_window_layout(network):
     network_frame = sg.Frame('Network', network_frame_rows, key='-NETWORK_FRAME-')
 
     
-    log_rows = [row for row in MOCK_LOGS][:CONFIG['MAX_UI_LOGS']]
-    log_frame_rows = [[sg.Listbox(log_rows, size=(None, CONFIG['MAX_UI_LOGS']), no_scrollbar=True, disabled=True, expand_x=True)]] # TODO need dynamic logs. implement a Logger class? Observer maybe?
+    log_rows = [row for row in LOGGER.get_logs_as_strings()]
+    log_frame_rows = [[sg.Listbox(log_rows, size=(None, CONFIG['MAX_UI_LOGS']), key='-LOGS_LISTBOX-', no_scrollbar=True, disabled=False, expand_x=True)]] # TODO need dynamic logs. implement a Logger class? Observer maybe?
 
     log_frame = sg.Frame('Log', log_frame_rows, expand_x=True)
 
@@ -144,6 +143,9 @@ def create_main_window_layout(network):
     return layout
 
 
+def get_main_window(PROGRAM_TITLE, network):
+  window = sg.Window(f"{PROGRAM_TITLE}", create_main_window_layout(network), resizable=True)
+  return window
 
 def splash_window():
   layout = [
@@ -185,8 +187,8 @@ def open_config() -> bool:
   window = sg.Window(f'{PROGRAM_TITLE} - Config', layout)
   event, values = window.read() # ! this is a blocking function until an event is triggered.
 
-  print('event of settings: ', event)
-  print('values of settings: ', values)
+  LOGGER.log('event of settings: ', event)
+  LOGGER.log('values of settings: ', values)
 
   if event == '-SAVE-':
     CONFIG['GAS_SCRIPT_URL'] = values['-GAS_SCRIPT_URL-']
@@ -227,7 +229,7 @@ def main():
   # if a new key is generated, we write it to the config.json
   if CONFIG['IP_ENCRYPTION_KEY'] == '':
     CONFIG['IP_ENCRYPTION_KEY'] = IP_MANAGER.encryption_key.decode()
-    print(f'Saving new key: ', CONFIG['IP_ENCRYPTION_KEY'])
+    LOGGER.log(f'Saving new key: ', CONFIG['IP_ENCRYPTION_KEY'])
     with open('config.json', 'w') as config_file:
       json.dump(CONFIG, config_file)
 
@@ -243,14 +245,13 @@ def main():
   
   # Event loop to process events and update the window
   first_loop = True
-  reloads = 0
 
   while True:
     if first_loop == True:
       window = splash_window()
       network = IP_MANAGER.update()
       window.close()
-      window = sg.Window(f"{PROGRAM_TITLE} - Reloads: {reloads}", create_main_window_layout(network))
+      window = get_main_window(PROGRAM_TITLE, network)
       first_loop = False
 
     event, values = window.read(timeout=100000) # ! this is a blocking function until an event is triggered. Set a timeout (ms)
@@ -261,44 +262,42 @@ def main():
     # TODO look for "timer_start" method
 
 
-    print('event (main loop): ', event)
+    LOGGER.log('event (main loop): ', event)
+
+
 
     # Exit the program when the window is closed
     if event == sg.WIN_CLOSED or event == None:
       break
-
-    if event == '-BUTTON_OPEN_CONFIG-':
-      if open_config(): # returns True if config is saved
+    elif event == '-BUTTON_OPEN_CONFIG-':
+      if open_config(): # opens config window and returns True if config is saved
         window.close()
-        window = sg.Window(f"{PROGRAM_TITLE} - Reloads: {reloads}", create_main_window_layout(network)) # TODO change MOCK_NETWORK in production
-        reloads += 1 # TODO remove all the reloads in production
-
-
-    if event == '-BUTTON_RELOAD_WINDOW-':
+        window = get_main_window(PROGRAM_TITLE, network)
+    elif event == '-BUTTON_RELOAD_WINDOW-':
       window.close()
-      window = sg.Window(f"{PROGRAM_TITLE} - Reloads: {reloads}", create_main_window_layout(network)) # TODO change MOCK_NETWORK in production
-      reloads += 1
-
-    if event == '-BUTTON_FORCE_NETWORK_UPDATE-':
-      print('event: ', event)
+      window = get_main_window(PROGRAM_TITLE, network)
+    elif event == '-BUTTON_FORCE_NETWORK_UPDATE-':
+      LOGGER.log('event: ', event)
       window['-BUTTON_FORCE_NETWORK_UPDATE-'].update('Updating...', disabled=True)
-      window.refresh()
-
       network = IP_MANAGER.update()
       window.close()
-      window = sg.Window(f"{PROGRAM_TITLE} - Reloads: {reloads}", create_main_window_layout(network)) # TODO change MOCK_NETWORK in production
-      # window.refresh()
-
-
-    if event.startswith("-BUTTON_COPY_IP_"):
-      print('event: ', event)
+      window = get_main_window(PROGRAM_TITLE, network)
+    elif event.startswith("-BUTTON_COPY_IP_"):
       index = int(event.split("_")[3].replace('-', ''))
       client_ip = window[f'-CLIENT_{index}_IP-'].get()
       sg.clipboard_set(client_ip)
-      sg.popup_no_buttons(f"IP '{client_ip}' copied to clipboard!", no_titlebar=True, auto_close=True, auto_close_duration=2)
+      # sg.popup_no_buttons(f"IP '{client_ip}' copied to clipboard!", no_titlebar=True, auto_close=True, auto_close_duration=2)
+      LOGGER.log(f"IP '{client_ip}' copied to clipboard!")
 
 
+    
+    print('conditionals ended')
 
+    # Update logs listbox and refresh window no matter the event
+    window.finalize()
+    log_rows = [row for row in LOGGER.get_logs_as_strings()]
+    window['-LOGS_LISTBOX-'].update(values=log_rows)
+    window.refresh()
 
 
   # Close the window and end the program
