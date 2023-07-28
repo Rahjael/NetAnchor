@@ -82,7 +82,7 @@ def create_main_window_layout():
     upper_row = [upper_row_left_column, upper_row_right_column]
     lower_row = [log_frame]
 
-    status_bar = [sg.Text(f"Current IP: {IP_MANAGER.get_current_ip()}", key='-CURRENT_IP-'), sg.Push(), sg.Text(f"Time to next update: Unknown", key='-TIMER-')]
+    status_bar = [sg.Text(f"{CONFIG['MACHINE_NAME']}: {IP_MANAGER.get_current_ip()}", key='-CURRENT_IP-'), sg.Push(), sg.Text(f"Time to next update: Unknown", key='-TIMER-')]
 
     layout = [
         upper_row,
@@ -115,23 +115,15 @@ def open_config_window() -> bool:
 
     layout = [
         [sg.Push(), sg.Text("Config", pad=(0, 50)), sg.Push()],
-        [sg.Text('GAS script url:'), sg.Input(
-            CONFIG['GAS_SCRIPT_URL'], key='-GAS_SCRIPT_URL-', expand_x=True)],
-        [sg.Text('GAS AuthCode:'), sg.Input(
-            CONFIG['GAS_AUTHCODE'], key='-GAS_AUTHCODE-', expand_x=True)],
-        [sg.Text('Network update interval (mins):'), sg.Input(
-            str(CONFIG['IP_UPDATE_INTERVAL']), key='-IP_UPDATE_INTERVAL-', expand_x=True)],
-        [sg.Text('Machine label:'), sg.Input(
-            CONFIG['MACHINE_NAME'], key='-MACHINE_LABEL-', expand_x=True)],
-        [sg.Text('IP retrieval service:'), sg.Input(
-            CONFIG['IP_SERVICE'], key='-IP_SERVICE-', expand_x=True)],
-        [sg.Text('Use encrypted database:'), sg.Checkbox('', default=bool(
-            CONFIG['USE_ENCRYPTED_DATABASE']), key='-USE_ENCRYPTED_DATABASE-', expand_x=True)],
-        [sg.Text('Encryption key:'), sg.Input(
-            CONFIG['IP_ENCRYPTION_KEY'], key='-IP_ENCRYPTION_KEY-', expand_x=True)],
-        [sg.Text('Max logs to show:'), sg.Input(
-            str(CONFIG['MAX_UI_LOGS']), key='-MAX_UI_LOGS-', expand_x=True)],
-        [sg.Push(), sg.Text('It is advised to restart for changes to take effect.', pad=(0, 50)), sg.Push()],
+        [sg.Text('GAS script url:'), sg.Push(), sg.Input(CONFIG['GAS_SCRIPT_URL'], size=45, key='-GAS_SCRIPT_URL-')],
+        [sg.Text('GAS AuthCode:'), sg.Push(), sg.Input(CONFIG['GAS_AUTHCODE'], size=45, key='-GAS_AUTHCODE-')],
+        [sg.Text('Network update interval (mins):'), sg.Push(), sg.Input(str(CONFIG['IP_UPDATE_INTERVAL']), size=45, key='-IP_UPDATE_INTERVAL-')],
+        [sg.Text('Machine label:'), sg.Push(), sg.Input(CONFIG['MACHINE_NAME'], size=45, key='-MACHINE_LABEL-')],
+        [sg.Text('IP retrieval service:'), sg.Push(), sg.Input(CONFIG['IP_SERVICE'], size=45, key='-IP_SERVICE-')],
+        [sg.Text('Use encrypted database:'), sg.Push(), sg.Checkbox('', default=bool(CONFIG['USE_ENCRYPTED_DATABASE']), key='-USE_ENCRYPTED_DATABASE-')],
+        [sg.Text('Encryption key:'), sg.Push(), sg.Input(CONFIG['IP_ENCRYPTION_KEY'], size=45, key='-IP_ENCRYPTION_KEY-')],
+        [sg.Text('Max logs to show:'), sg.Push(), sg.Input(str(CONFIG['MAX_UI_LOGS']), size=45, key='-MAX_UI_LOGS-')],
+        [sg.Push(), sg.Text('Some settings require to restart for changes to take effect.', pad=(0, 50)), sg.Push()],
         [sg.Button('Discard changes'), sg.Button(
             'Save changes', key='-SAVE-', expand_x=True)],
     ]
@@ -141,7 +133,7 @@ def open_config_window() -> bool:
     if event == '-SAVE-':
         CONFIG['GAS_SCRIPT_URL'] = values['-GAS_SCRIPT_URL-']
         CONFIG['GAS_AUTHCODE'] = values['-GAS_AUTHCODE-']
-        CONFIG['IP_UPDATE_INTERVAL'] = int(values['-IP_UPDATE_INTERVAL-'])
+        CONFIG['IP_UPDATE_INTERVAL'] = int(values['-IP_UPDATE_INTERVAL-']) if int(values['-IP_UPDATE_INTERVAL-']) > 0 and int(values['-IP_UPDATE_INTERVAL-']) <= 60 else 15,
         CONFIG['MACHINE_NAME'] = values['-MACHINE_LABEL-']
         CONFIG['IP_SERVICE'] = values['-IP_SERVICE-']
         CONFIG['USE_ENCRYPTED_DATABASE'] = values['-USE_ENCRYPTED_DATABASE-']
@@ -250,6 +242,10 @@ def main():
 #
 #
 
+
+UI_VERSION = 'v0.1.0'
+GAS_SCRIPT_VERSION = 'vX.Y.Z'
+
 CONFIG_FILE_PATH = os.path.join(os.getcwd(), 'config.json')
 
 LOGGER = Logger()
@@ -258,7 +254,7 @@ IP_MANAGER = IPManager(CONFIG, LOGGER)
 MAIN_WINDOW = None # Main window is in the global scope so that it's easier to refresh it when a scheduled task runs
 
 LOGGER.log('Program started')
-PROGRAM_TITLE = f"NetAnchor - {CONFIG['UI_VERSION']}"
+PROGRAM_TITLE = f"NetAnchor - {UI_VERSION}"
 
 # Schedule the updating task
 schedule.every(CONFIG['IP_UPDATE_INTERVAL']).minutes.do(update_ip_manager)
@@ -266,7 +262,6 @@ schedule.every(CONFIG['IP_UPDATE_INTERVAL']).minutes.do(update_ip_manager)
 
 if __name__ == "__main__":
     main()
-
 
 
 
