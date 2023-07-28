@@ -63,11 +63,13 @@ Mandatory for v0.1.0 release:
 - [x] IPv4 support
 - [x] Working with console logs
 - [x] Basic UI
-  - [x] Custom configs through UI settings
-  - [x] Implement Logger
-- [ ] Autocheck for updates (dedicated GAS repo for the project)
+- [x] Custom configs through UI settings
+- [x] Implement Logger
+- [ ] Periodically run IP_MANAGER.update()
+- [ ] Autocheck for program updates (dedicated GAS repo for the project)
 
 Later on:
+- [ ] Being able to remove items from the network via UI
 - [ ] "Installation package" for GAS. Try to make it as simple as possible to set things up
 - [ ] "Doomsday recovery" for GAS. From a button in the Python UI, be able to reset the Sheet's structure in case the user messes it up manually on Google Drive
 - [ ] Encryption of transmitted data
@@ -78,6 +80,14 @@ Later on:
 - [TightVNC](https://www.tightvnc.com/download.html) for remote access
 - [ipfy API](https://www.ipify.org/) is used for retrieving the IPs
 
+
+
+## Embedded rules
+
+These are config choices made by the developers, hard coded in the program. They may be turned into configurable parameters in the future.
+
+### GAS:
+- Any stored IP older than 2 days is removed from the network.
 
 
 
