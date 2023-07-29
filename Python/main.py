@@ -59,7 +59,7 @@ def create_main_window_layout():
     # network_frame_rows = [[sg.Listbox([f'{entry[0]}: {entry[1]}' for entry in network], key='-CLIENTS-', enable_events=True, size=(50, 10))]]
 
     network_frame = sg.Frame(
-        'Network', network_frame_rows, key='-NETWORK_FRAME-', expand_x=True)
+        'Network', network_frame_rows if len(network_frame_rows) > 0 else [[sg.Text('No data')]], key='-NETWORK_FRAME-', expand_x=True)
 
     upper_row_left_column = sg.Column([
         [network_frame],
@@ -286,18 +286,3 @@ if __name__ == "__main__":
 # print('encrypted: ', encrypted, type(encrypted))
 # print('decrypted: ', decrypted, type(decrypted))
 
-
-# Loop so that the scheduled tasks keep on running all time.
-# while True:
-#     for i in tqdm(range(300), desc="Waiting for next check: "):
-#         time.sleep(1)
-#     schedule.run_pending()
-
-
-# TODO update progress bar till next update
-    # schedule.run_pending()
-    # time.sleep(1)
-    # time_of_next_run = schedule.next_run()
-    # time_now = datetime.now()
-    # time_remaining = time_of_next_run - time_now
-    # print(time_remaining)
