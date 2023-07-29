@@ -133,7 +133,7 @@ def open_config_window() -> bool:
     if event == '-SAVE-':
         CONFIG['GAS_SCRIPT_URL'] = values['-GAS_SCRIPT_URL-']
         CONFIG['GAS_AUTHCODE'] = values['-GAS_AUTHCODE-']
-        CONFIG['IP_UPDATE_INTERVAL'] = int(values['-IP_UPDATE_INTERVAL-']) if int(values['-IP_UPDATE_INTERVAL-']) > 0 and int(values['-IP_UPDATE_INTERVAL-']) <= 60 else 15,
+        CONFIG['IP_UPDATE_INTERVAL'] = int(values['-IP_UPDATE_INTERVAL-']) if int(values['-IP_UPDATE_INTERVAL-']) > 0 and int(values['-IP_UPDATE_INTERVAL-']) <= 60 else 15
         CONFIG['MACHINE_NAME'] = values['-MACHINE_LABEL-']
         CONFIG['IP_SERVICE'] = values['-IP_SERVICE-']
         CONFIG['USE_ENCRYPTED_DATABASE'] = values['-USE_ENCRYPTED_DATABASE-']
