@@ -1,9 +1,9 @@
 /GAS/config.js
+/Python/build/
 /Python/config.json
+/Python/dist/
 /Python/__pycache__/
 /old_code/
 **/config.json
 **/config.js
 localdev
-/build/
-/dist/
