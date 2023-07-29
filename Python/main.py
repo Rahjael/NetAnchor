@@ -23,10 +23,21 @@ def load_config(CONFIG_FILE_PATH) -> str:
     if os.path.exists(CONFIG_FILE_PATH):
         LOGGER.log('Config file exists.')
     else:
-        raise Exception('Config file not found. Unable to run program.')
-    
-        # TODO create a default config file if one does not already exist
-    
+        LOGGER.log('Config file does not exists. Loading default config')
+        CONFIG = {
+            "GAS_SCRIPT_URL": "",
+            "GAS_AUTHCODE": "",
+            "IP_UPDATE_INTERVAL": 15,
+            "MACHINE_NAME": "NetAnchored Device",
+            "IP_SERVICE": "https://api.ipify.org",
+            "USE_ENCRYPTED_DATABASE": False,
+            "IP_ENCRYPTION_KEY": "",
+            "MAX_UI_LOGS": 10
+        }
+        return CONFIG
+        # raise Exception('Config file not found. Unable to run program.')
+
+
     LOGGER.log('Loading config...')
     with open(CONFIG_FILE_PATH, "r") as file:
         CONFIG = json.load(file)
@@ -179,7 +190,7 @@ def main():
         CONFIG['IP_ENCRYPTION_KEY'] = IP_MANAGER.encryption_key.decode()
         LOGGER.log(f'Saving new key: ', CONFIG['IP_ENCRYPTION_KEY'])
         with open('config.json', 'w') as config_file:
-            json.dump(CONFIG, config_file)
+            json.dump(CONFIG, config_file, indent=4)
 
     # IP_MANAGER.update()
 
