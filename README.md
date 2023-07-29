@@ -73,7 +73,8 @@ Mandatory for v0.1.0 release:
 - [x] Custom configs through UI settings
 - [x] Implement Logger
 - [x] Periodically run IP_MANAGER.update()
-- [ ] Pick a licence
+- [x] Implement non-blocking POST requests
+- [x] Pick a license
 
 Later on:
 - [ ] Autocheck for program updates (dedicated GAS repo for the project)
@@ -101,4 +102,6 @@ These are config choices made by the developers, hard coded in the program. They
 
 ## Changelog
 
-- 2023/07/? - (TODO) Release v0.1.0 (beta) (to update when ready)
+### 2023/07/? - (TODO) 
+- Released v0.1.0
+
