@@ -85,7 +85,7 @@ class IPManager:
     #   self.logger.log(f'IP has not changed since last check. ({current_ip}/{self.last_known_ip})')
     
     self.get_own_ip_attempts = 0
-    return self.get_network_from_GAS()
+    self.get_network_from_GAS()
 
 
   def get_network_from_GAS(self) -> list[str]:
@@ -119,15 +119,9 @@ class IPManager:
     self.logger.log('Network: ')
     for entry in self.network:
       self.logger.log(entry)
-
-    return self.network
   
-  def ask_network(self):
-    if self.network_has_been_given:
-      return False
-    else:
-      self.network_has_been_given = True
-      return self.network
+  def has_network_been_given(self):
+    return self.network_has_been_given
 
   def is_valid_ipv4(self, ip: str) -> bool:
     pattern = r"^(?:\d{1,3}\.){3}\d{1,3}$"
@@ -144,6 +138,7 @@ class IPManager:
     return decrypted_bytes.decode()
 
   def get_network(self):
+    self.network_has_been_given = True
     return self.network
   
   def get_current_ip(self):

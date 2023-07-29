@@ -5,6 +5,7 @@ import random
 import schedule
 import string
 import tkinter.font as tkFont
+import threading
 import PySimpleGUI as sg
 
 from ip_manager import IPManager
@@ -67,14 +68,14 @@ def create_main_window_layout():
 
     log_rows = [row for row in LOGGER.get_logs_as_strings()]
     log_frame_rows = [[sg.Listbox(log_rows, size=(None, CONFIG['MAX_UI_LOGS']), key='-LOGS_LISTBOX-',
-                                  disabled=False, expand_x=True)]]
+                                  disabled=False, no_scrollbar=True, expand_x=True)]]
     log_frame = sg.Frame('Log', log_frame_rows, expand_x=True)
 
 
     upper_row_right_column = sg.Column([
         [sg.Button('Update now', key='-BUTTON_FORCE_NETWORK_UPDATE-')],
         [sg.Button('Open config', key='-BUTTON_OPEN_CONFIG-')],
-        [sg.Button('Reload window', key='-BUTTON_RELOAD_WINDOW-')],
+        # [sg.Button('Reload window', key='-BUTTON_RELOAD_WINDOW-')],
         # [sg.Text("Download TightVNC")],
         # [sg.Text("Open sheet in Google Drive")],
         [sg.VPush()],
@@ -98,6 +99,7 @@ def create_main_window_layout():
 
 def get_main_window():
     global PROGRAM_TITLE
+    print('getting main window')
 
     window = sg.Window(f"{PROGRAM_TITLE}", create_main_window_layout(), resizable=False)
     return window
@@ -166,6 +168,9 @@ def update_ip_manager():
     MAIN_WINDOW.close()
     MAIN_WINDOW = get_main_window()
 
+def mt_ip_manager_update(IP_MANAGER):
+    IP_MANAGER.update()
+
 def main():
     global MAIN_WINDOW
 
@@ -186,9 +191,11 @@ def main():
     while True:
         if first_loop == True:
             splash_w = splash_window()
-            IP_MANAGER.update()
+            # IP_MANAGER.update()
             splash_w.close()
             MAIN_WINDOW = get_main_window()
+            thread = threading.Thread(target=mt_ip_manager_update, args=(IP_MANAGER,))
+            thread.start()
             first_loop = False
 
         event, values = MAIN_WINDOW.read(timeout=500) # ! this is a blocking function until an event is triggered. Set a timeout (ms)
@@ -201,9 +208,6 @@ def main():
         MAIN_WINDOW.finalize()
         MAIN_WINDOW['-TIMER-'].update(value=f"Time to next update: {int(m):02}:{int(s):02}")
 
-
-        # LOGGER.log('event (main loop): ', event)
-
         # Exit the program when the window is closed
         if event == sg.WIN_CLOSED or event == None:
             break
@@ -215,11 +219,13 @@ def main():
             MAIN_WINDOW.close()
             MAIN_WINDOW = get_main_window()
         elif event == '-BUTTON_FORCE_NETWORK_UPDATE-':
-            MAIN_WINDOW['-BUTTON_FORCE_NETWORK_UPDATE-'].update(
-                'Updating...', disabled=True)
-            IP_MANAGER.update()
-            MAIN_WINDOW.close()
-            MAIN_WINDOW = get_main_window()
+            MAIN_WINDOW['-BUTTON_FORCE_NETWORK_UPDATE-'].update('Updating...', disabled=True)
+            thread = threading.Thread(target=mt_ip_manager_update, args=(IP_MANAGER,))
+            thread.start()
+            # Optionally, you can wait for the thread to complete using join()
+            # thread.join()
+
+
         elif event.startswith("-BUTTON_COPY_IP_"):
             index = int(event.split("_")[3].replace('-', ''))
             client_ip = MAIN_WINDOW[f'-CLIENT_{index}_IP-'].get()
@@ -231,6 +237,11 @@ def main():
         log_rows = [row for row in LOGGER.get_logs_as_strings()]
         MAIN_WINDOW['-LOGS_LISTBOX-'].update(values=log_rows)
         MAIN_WINDOW.refresh()
+
+        # See dev_readme.md for an explanation about this
+        if not IP_MANAGER.has_network_been_given():
+            MAIN_WINDOW.close()
+            MAIN_WINDOW = get_main_window()
 
     # Close the window and end the program
     MAIN_WINDOW.close()
