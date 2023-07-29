@@ -3,7 +3,7 @@ import json
 import re
 import requests
 from typing import Union
-
+from urllib.parse import urlparse
 
 
 
@@ -66,6 +66,11 @@ class IPManager:
       'ip': ip_to_send,
     }
     self.logger.log(f'Sending this to GAS: ', data)
+    
+    if not is_valid_url(address):
+      self.logger.log(f'Invalid url: {address}')
+      return
+    
     response = requests.post(address, headers=headers, data=json.dumps(data))
     self.logger.log('Response from server: ', response.text)
 
@@ -98,6 +103,11 @@ class IPManager:
       'requestType': 'REQUEST_NETWORK',
       'ip': self.last_known_ip,
     }
+
+    if not is_valid_url(address):
+      self.logger.log(f'Invalid url: {address}')
+      return
+    
     response = requests.post(address, headers=headers, data=json.dumps(data))
     self.logger.log('Response from server: ', response.text)
     
@@ -143,3 +153,12 @@ class IPManager:
   
   def get_current_ip(self):
     return self.last_known_ip
+  
+
+
+def is_valid_url(url):
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except:
+        return False
