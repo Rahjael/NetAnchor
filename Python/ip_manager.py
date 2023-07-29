@@ -31,6 +31,8 @@ class IPManager:
     self.network = network # this is useful to update this instance coming from another one (check open_config_window() in main.py)
     self.logger = logger
 
+    self.network_has_been_given = False
+
     if logger == None:
       raise Exception('Logger not set. Exiting program.')
 
@@ -113,11 +115,19 @@ class IPManager:
           raise Exception('Error decrypting IP') # ? This could just update the fetched network with the same string
         
     self.network = fetched_network
+    self.network_has_been_given = False
     self.logger.log('Network: ')
     for entry in self.network:
       self.logger.log(entry)
 
     return self.network
+  
+  def ask_network(self):
+    if self.network_has_been_given:
+      return False
+    else:
+      self.network_has_been_given = True
+      return self.network
 
   def is_valid_ipv4(self, ip: str) -> bool:
     pattern = r"^(?:\d{1,3}\.){3}\d{1,3}$"

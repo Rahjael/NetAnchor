@@ -23,6 +23,9 @@ def load_config(CONFIG_FILE_PATH) -> str:
         LOGGER.log('Config file exists.')
     else:
         raise Exception('Config file not found. Unable to run program.')
+    
+        # TODO create a default config file if one does not already exist
+    
     LOGGER.log('Loading config...')
     with open(CONFIG_FILE_PATH, "r") as file:
         CONFIG = json.load(file)
