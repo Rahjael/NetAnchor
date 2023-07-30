@@ -8,8 +8,9 @@ import string
 import tkinter.font as tkFont
 import threading
 import PySimpleGUI as sg
+import webbrowser
 
-from images import cc_image, github_image
+from images import cc_image, github_image, donate_image
 from ip_manager import IPManager
 from logger import Logger
 
@@ -90,7 +91,7 @@ def create_main_window_layout():
         # [sg.Text("Open sheet in Google Drive")],
         [sg.VPush()],
         [sg.Image(data=cc_image, key='-CC_IMAGE-', enable_events=True)],
-        [sg.Text("Donate")],
+        [sg.Image(data=donate_image, key='-DONATE_IMAGE-', enable_events=True)],
         [sg.Image(data=github_image, key='-GITHUB_IMAGE-', enable_events=True)],
     ], element_justification='r', expand_x=True, expand_y=True)
 
@@ -225,6 +226,10 @@ def main():
         # Exit the program when the window is closed
         if event == sg.WIN_CLOSED or event == None:
             break
+        elif event == '-CC_IMAGE-':
+            webbrowser.open('https://creativecommons.org/licenses/by-nc-sa/4.0/')
+        elif event == '-GITHUB_IMAGE-':
+            webbrowser.open('https://github.com/Rahjael/NetAnchor')
         elif event == '-BUTTON_OPEN_CONFIG-':
             if open_config_window():  # opens config window and returns True if config is saved
                 MAIN_WINDOW.close()
@@ -238,7 +243,6 @@ def main():
             thread.start()
             # Optionally, you can wait for the thread to complete using join()
             # thread.join()
-
         elif type(event) == str and event.startswith("-BUTTON_COPY_IP_"):
             index = int(event.split("_")[3].replace('-', ''))
             client_ip = MAIN_WINDOW[f'-CLIENT_{index}_IP-'].get()
