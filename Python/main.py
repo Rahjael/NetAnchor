@@ -5,6 +5,7 @@ import random
 import schedule
 import string
 import tkinter.font as tkFont
+import threading
 import PySimpleGUI as sg
 
 from ip_manager import IPManager
@@ -22,7 +23,21 @@ def load_config(CONFIG_FILE_PATH) -> str:
     if os.path.exists(CONFIG_FILE_PATH):
         LOGGER.log('Config file exists.')
     else:
-        raise Exception('Config file not found. Unable to run program.')
+        LOGGER.log('Config file does not exists. Loading default config')
+        CONFIG = {
+            "GAS_SCRIPT_URL": "",
+            "GAS_AUTHCODE": "",
+            "IP_UPDATE_INTERVAL": 15,
+            "MACHINE_NAME": "NetAnchored Device",
+            "IP_SERVICE": "https://api.ipify.org",
+            "USE_ENCRYPTED_DATABASE": False,
+            "IP_ENCRYPTION_KEY": "",
+            "MAX_UI_LOGS": 10
+        }
+        return CONFIG
+        # raise Exception('Config file not found. Unable to run program.')
+
+
     LOGGER.log('Loading config...')
     with open(CONFIG_FILE_PATH, "r") as file:
         CONFIG = json.load(file)
@@ -55,7 +70,7 @@ def create_main_window_layout():
     # network_frame_rows = [[sg.Listbox([f'{entry[0]}: {entry[1]}' for entry in network], key='-CLIENTS-', enable_events=True, size=(50, 10))]]
 
     network_frame = sg.Frame(
-        'Network', network_frame_rows, key='-NETWORK_FRAME-', expand_x=True)
+        'Network', network_frame_rows if len(network_frame_rows) > 0 else [[sg.Text('No data')]], key='-NETWORK_FRAME-', expand_x=True)
 
     upper_row_left_column = sg.Column([
         [network_frame],
@@ -64,14 +79,14 @@ def create_main_window_layout():
 
     log_rows = [row for row in LOGGER.get_logs_as_strings()]
     log_frame_rows = [[sg.Listbox(log_rows, size=(None, CONFIG['MAX_UI_LOGS']), key='-LOGS_LISTBOX-',
-                                  disabled=False, expand_x=True)]]
+                                  disabled=False, no_scrollbar=True, expand_x=True)]]
     log_frame = sg.Frame('Log', log_frame_rows, expand_x=True)
 
 
     upper_row_right_column = sg.Column([
         [sg.Button('Update now', key='-BUTTON_FORCE_NETWORK_UPDATE-')],
         [sg.Button('Open config', key='-BUTTON_OPEN_CONFIG-')],
-        [sg.Button('Reload window', key='-BUTTON_RELOAD_WINDOW-')],
+        # [sg.Button('Reload window', key='-BUTTON_RELOAD_WINDOW-')],
         # [sg.Text("Download TightVNC")],
         # [sg.Text("Open sheet in Google Drive")],
         [sg.VPush()],
@@ -95,6 +110,7 @@ def create_main_window_layout():
 
 def get_main_window():
     global PROGRAM_TITLE
+    print('getting main window')
 
     window = sg.Window(f"{PROGRAM_TITLE}", create_main_window_layout(), resizable=False)
     return window
@@ -133,7 +149,7 @@ def open_config_window() -> bool:
     if event == '-SAVE-':
         CONFIG['GAS_SCRIPT_URL'] = values['-GAS_SCRIPT_URL-']
         CONFIG['GAS_AUTHCODE'] = values['-GAS_AUTHCODE-']
-        CONFIG['IP_UPDATE_INTERVAL'] = int(values['-IP_UPDATE_INTERVAL-']) if int(values['-IP_UPDATE_INTERVAL-']) > 0 and int(values['-IP_UPDATE_INTERVAL-']) <= 60 else 15,
+        CONFIG['IP_UPDATE_INTERVAL'] = int(values['-IP_UPDATE_INTERVAL-']) if int(values['-IP_UPDATE_INTERVAL-']) > 0 and int(values['-IP_UPDATE_INTERVAL-']) <= 60 else 15
         CONFIG['MACHINE_NAME'] = values['-MACHINE_LABEL-']
         CONFIG['IP_SERVICE'] = values['-IP_SERVICE-']
         CONFIG['USE_ENCRYPTED_DATABASE'] = values['-USE_ENCRYPTED_DATABASE-']
@@ -163,6 +179,9 @@ def update_ip_manager():
     MAIN_WINDOW.close()
     MAIN_WINDOW = get_main_window()
 
+def mt_ip_manager_update(IP_MANAGER):
+    IP_MANAGER.update()
+
 def main():
     global MAIN_WINDOW
 
@@ -171,7 +190,7 @@ def main():
         CONFIG['IP_ENCRYPTION_KEY'] = IP_MANAGER.encryption_key.decode()
         LOGGER.log(f'Saving new key: ', CONFIG['IP_ENCRYPTION_KEY'])
         with open('config.json', 'w') as config_file:
-            json.dump(CONFIG, config_file)
+            json.dump(CONFIG, config_file, indent=4)
 
     # IP_MANAGER.update()
 
@@ -183,9 +202,11 @@ def main():
     while True:
         if first_loop == True:
             splash_w = splash_window()
-            IP_MANAGER.update()
+            # IP_MANAGER.update()
             splash_w.close()
             MAIN_WINDOW = get_main_window()
+            thread = threading.Thread(target=mt_ip_manager_update, args=(IP_MANAGER,))
+            thread.start()
             first_loop = False
 
         event, values = MAIN_WINDOW.read(timeout=500) # ! this is a blocking function until an event is triggered. Set a timeout (ms)
@@ -198,9 +219,6 @@ def main():
         MAIN_WINDOW.finalize()
         MAIN_WINDOW['-TIMER-'].update(value=f"Time to next update: {int(m):02}:{int(s):02}")
 
-
-        # LOGGER.log('event (main loop): ', event)
-
         # Exit the program when the window is closed
         if event == sg.WIN_CLOSED or event == None:
             break
@@ -212,11 +230,13 @@ def main():
             MAIN_WINDOW.close()
             MAIN_WINDOW = get_main_window()
         elif event == '-BUTTON_FORCE_NETWORK_UPDATE-':
-            MAIN_WINDOW['-BUTTON_FORCE_NETWORK_UPDATE-'].update(
-                'Updating...', disabled=True)
-            IP_MANAGER.update()
-            MAIN_WINDOW.close()
-            MAIN_WINDOW = get_main_window()
+            MAIN_WINDOW['-BUTTON_FORCE_NETWORK_UPDATE-'].update('Updating...', disabled=True)
+            thread = threading.Thread(target=mt_ip_manager_update, args=(IP_MANAGER,))
+            thread.start()
+            # Optionally, you can wait for the thread to complete using join()
+            # thread.join()
+
+
         elif event.startswith("-BUTTON_COPY_IP_"):
             index = int(event.split("_")[3].replace('-', ''))
             client_ip = MAIN_WINDOW[f'-CLIENT_{index}_IP-'].get()
@@ -228,6 +248,11 @@ def main():
         log_rows = [row for row in LOGGER.get_logs_as_strings()]
         MAIN_WINDOW['-LOGS_LISTBOX-'].update(values=log_rows)
         MAIN_WINDOW.refresh()
+
+        # See dev_readme.md for an explanation about this
+        if not IP_MANAGER.has_network_been_given():
+            MAIN_WINDOW.close()
+            MAIN_WINDOW = get_main_window()
 
     # Close the window and end the program
     MAIN_WINDOW.close()
@@ -272,18 +297,3 @@ if __name__ == "__main__":
 # print('encrypted: ', encrypted, type(encrypted))
 # print('decrypted: ', decrypted, type(decrypted))
 
-
-# Loop so that the scheduled tasks keep on running all time.
-# while True:
-#     for i in tqdm(range(300), desc="Waiting for next check: "):
-#         time.sleep(1)
-#     schedule.run_pending()
-
-
-# TODO update progress bar till next update
-    # schedule.run_pending()
-    # time.sleep(1)
-    # time_of_next_run = schedule.next_run()
-    # time_now = datetime.now()
-    # time_remaining = time_of_next_run - time_now
-    # print(time_remaining)

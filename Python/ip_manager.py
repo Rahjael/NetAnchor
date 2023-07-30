@@ -3,7 +3,7 @@ import json
 import re
 import requests
 from typing import Union
-
+from urllib.parse import urlparse
 
 
 
@@ -30,6 +30,8 @@ class IPManager:
     self.encryption_key = CONFIG['IP_ENCRYPTION_KEY'] if CONFIG['IP_ENCRYPTION_KEY'] != '' else Fernet.generate_key()
     self.network = network # this is useful to update this instance coming from another one (check open_config_window() in main.py)
     self.logger = logger
+
+    self.network_has_been_given = False
 
     if logger == None:
       raise Exception('Logger not set. Exiting program.')
@@ -64,6 +66,11 @@ class IPManager:
       'ip': ip_to_send,
     }
     self.logger.log(f'Sending this to GAS: ', data)
+    
+    if not is_valid_url(address):
+      self.logger.log(f'Invalid url: {address}')
+      return
+    
     response = requests.post(address, headers=headers, data=json.dumps(data))
     self.logger.log('Response from server: ', response.text)
 
@@ -83,7 +90,7 @@ class IPManager:
     #   self.logger.log(f'IP has not changed since last check. ({current_ip}/{self.last_known_ip})')
     
     self.get_own_ip_attempts = 0
-    return self.get_network_from_GAS()
+    self.get_network_from_GAS()
 
 
   def get_network_from_GAS(self) -> list[str]:
@@ -96,6 +103,11 @@ class IPManager:
       'requestType': 'REQUEST_NETWORK',
       'ip': self.last_known_ip,
     }
+
+    if not is_valid_url(address):
+      self.logger.log(f'Invalid url: {address}')
+      return
+    
     response = requests.post(address, headers=headers, data=json.dumps(data))
     self.logger.log('Response from server: ', response.text)
     
@@ -113,11 +125,13 @@ class IPManager:
           raise Exception('Error decrypting IP') # ? This could just update the fetched network with the same string
         
     self.network = fetched_network
+    self.network_has_been_given = False
     self.logger.log('Network: ')
     for entry in self.network:
       self.logger.log(entry)
-
-    return self.network
+  
+  def has_network_been_given(self):
+    return self.network_has_been_given
 
   def is_valid_ipv4(self, ip: str) -> bool:
     pattern = r"^(?:\d{1,3}\.){3}\d{1,3}$"
@@ -134,7 +148,17 @@ class IPManager:
     return decrypted_bytes.decode()
 
   def get_network(self):
+    self.network_has_been_given = True
     return self.network
   
   def get_current_ip(self):
     return self.last_known_ip
+  
+
+
+def is_valid_url(url):
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except:
+        return False

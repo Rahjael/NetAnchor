@@ -1,5 +1,12 @@
 # NetAnchor
 
+
+
+[<img src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png">](http://creativecommons.org/licenses/by-nc-sa/4.0/)
+
+
+
+
 Keep track of dynamic IPs for all your connected devices, encrypted and private. 
 
 ## How it works
@@ -65,10 +72,12 @@ Mandatory for v0.1.0 release:
 - [x] Basic UI
 - [x] Custom configs through UI settings
 - [x] Implement Logger
-- [ ] Periodically run IP_MANAGER.update()
-- [ ] Autocheck for program updates (dedicated GAS repo for the project)
+- [x] Periodically run IP_MANAGER.update()
+- [x] Implement non-blocking POST requests
+- [x] Pick a license
 
 Later on:
+- [ ] Autocheck for program updates (dedicated GAS repo for the project)
 - [ ] Being able to remove items from the network via UI
 - [ ] "Installation package" for GAS. Try to make it as simple as possible to set things up
 - [ ] "Doomsday recovery" for GAS. From a button in the Python UI, be able to reset the Sheet's structure in case the user messes it up manually on Google Drive
@@ -93,4 +102,6 @@ These are config choices made by the developers, hard coded in the program. They
 
 ## Changelog
 
-- 2023/07/? - (TODO) Release v0.1.0 (beta) (to update when ready)
+### 2023/07/? - (TODO) 
+- Released v0.1.0
+
