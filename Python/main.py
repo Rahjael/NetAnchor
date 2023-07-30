@@ -1,3 +1,4 @@
+import base64
 from datetime import datetime
 import json
 import os
@@ -8,6 +9,7 @@ import tkinter.font as tkFont
 import threading
 import PySimpleGUI as sg
 
+from images import cc_image, github_image
 from ip_manager import IPManager
 from logger import Logger
 
@@ -60,6 +62,8 @@ def create_main_window_layout():
     default_size = sg.DEFAULT_FONT[1]
     bold_font = tkFont.Font(family=default_font, size=default_size, weight="bold", slant="italic")
 
+
+
     # Create network list, bold our current IP and LABEL
     network_frame_rows = []
     for i, entry in enumerate(IP_MANAGER.get_network()):
@@ -90,8 +94,9 @@ def create_main_window_layout():
         # [sg.Text("Download TightVNC")],
         # [sg.Text("Open sheet in Google Drive")],
         [sg.VPush()],
+        [sg.Image(data=cc_image, key='-CC_IMAGE-', enable_events=True)],
         [sg.Text("Donate")],
-        [sg.Text("Github")],
+        [sg.Image(data=github_image, key='-GITHUB_IMAGE-', enable_events=True)],
     ], element_justification='r', expand_x=True, expand_y=True)
 
     upper_row = [upper_row_left_column, upper_row_right_column]
@@ -211,6 +216,9 @@ def main():
 
         event, values = MAIN_WINDOW.read(timeout=500) # ! this is a blocking function until an event is triggered. Set a timeout (ms)
 
+        if event != '__TIMEOUT__':
+            LOGGER.log('Event: ', event)
+
         schedule.run_pending()
 
         # Update timer till next network update
@@ -236,8 +244,7 @@ def main():
             # Optionally, you can wait for the thread to complete using join()
             # thread.join()
 
-
-        elif event.startswith("-BUTTON_COPY_IP_"):
+        elif type(event) == 'str' and event.startswith("-BUTTON_COPY_IP_"):
             index = int(event.split("_")[3].replace('-', ''))
             client_ip = MAIN_WINDOW[f'-CLIENT_{index}_IP-'].get()
             sg.clipboard_set(client_ip)
