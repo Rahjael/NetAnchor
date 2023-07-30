@@ -230,6 +230,9 @@ def main():
             webbrowser.open('https://creativecommons.org/licenses/by-nc-sa/4.0/')
         elif event == '-GITHUB_IMAGE-':
             webbrowser.open('https://github.com/Rahjael/NetAnchor')
+        elif event == '-DONATE_IMAGE-':
+            # TODO implement this
+            LOGGER.log('Donations are not yet implemented. Thank you anyways!')
         elif event == '-BUTTON_OPEN_CONFIG-':
             if open_config_window():  # opens config window and returns True if config is saved
                 MAIN_WINDOW.close()
