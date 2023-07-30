@@ -1,0 +1,47 @@
+his to GAS:  {"authCode": "k6idf8alf9asdkwer0sasg334", "serviceName": "HOMEs", "requestType": "UPDATE_IP", "ip": "151.41.101.240"}
+LOGGER:  Response from server:  {"status":200,"message":"Logged new ip for service HOMEs: 151.41.101.240","value":"OK"}
+LOGGER:  Requesting network to GAS...
+LOGGER:  Response from server:  {"status":200,"message":"Currently known network","value":[["HOMEs","151.41.101.240"],["HOME","151.41.101.240"],["LAPTOP","156.8.96.56"],["HOME_DESKTOP","151.40.108.66"]]}
+LOGGER:  Network: 
+LOGGER:  ['HOMEs', '151.41.101.240']
+LOGGER:  ['HOME', '151.41.101.240']
+LOGGER:  ['LAPTOP', '156.8.96.56']
+LOGGER:  ['HOME_DESKTOP', '151.40.108.66']
+LOGGER:  Getting own IP...
+LOGGER:  Sending own IP to GAS...
+LOGGER:  Sending this to GAS:  {"authCode": "k6idf8alf9asdkwer0sasg334", "serviceName": "HOMEs", "requestType": "UPDATE_IP", "ip": "151.41.101.240"}
+LOGGER:  Response from server:  <!DOCTYPE html><html><head><link rel="shortcut icon" href="//ssl.gstatic.com/docs/script/images/favicon.ico"><title>Errore</title><style type="text/css" nonce="plPnRsVQeduEVHKWmz6YXQ">body {background-color: #fff; margin: 0; padding: 0;}.errorMessage {font-family: Arial,sans-serif; font-size: 12pt; font-weight: bold; line-height: 150%; padding-top: 25px;}</style></head><body style="margin:20px"><div><img alt="Google Apps Script" src="//ssl.gstatic.com/docs/script/images/logo.png"></div><div style="text-align:center;font-family:monospace;margin:50px auto 0;max-width:600px">Exception: Servizio Fogli di lavoro non riuscito durante l&#39;accesso al documento con ID 1-ylhLrxYVNrVhymisSunGasjbUrMjEIXDCBTFiUsuu8. (riga 14, file &quot;functions&quot;)</div></body></html>
+LOGGER:  Requesting network to GAS...
+LOGGER:  Response from server:  <!DOCTYPE html><html><head><link rel="shortcut icon" href="//ssl.gstatic.com/docs/script/images/favicon.ico"><title>Errore</title><style type="text/css" nonce="vnefJF0Ifo2H1sUpO6ljVQ">body {background-color: #fff; margin: 0; padding: 0;}.errorMessage {font-family: Arial,sans-serif; font-size: 12pt; font-weight: bold; line-height: 150%; padding-top: 25px;}</style></head><body style="margin:20px"><div><img alt="Google Apps Script" src="//ssl.gstatic.com/docs/script/images/logo.png"></div><div style="text-align:center;font-family:monospace;margin:50px auto 0;max-width:600px">Exception: Servizio Fogli di lavoro non riuscito durante l&#39;accesso al documento con ID 1-ylhLrxYVNrVhymisSunGasjbUrMjEIXDCBTFiUsuu8. (riga 14, file &quot;functions&quot;)</div></body></html>
+Traceback (most recent call last):
+  File "c:\Users\Developer\Desktop\NetAnchor\Python\main.py", line 265, in <module>
+    main()
+  File "c:\Users\Developer\Desktop\NetAnchor\Python\main.py", line 194, in main
+    schedule.run_pending()
+  File "C:\Users\Developer\AppData\Local\Programs\Python\Python311\Lib\site-packages\schedule\__init__.py", line 822, in run_pending
+    default_scheduler.run_pending()
+  File "C:\Users\Developer\AppData\Local\Programs\Python\Python311\Lib\site-packages\schedule\__init__.py", line 100, in run_pending
+    self._run_job(job)
+  File "C:\Users\Developer\AppData\Local\Programs\Python\Python311\Lib\site-packages\schedule\__init__.py", line 172, in _run_job
+    ret = job.run()
+          ^^^^^^^^^
+  File "C:\Users\Developer\AppData\Local\Programs\Python\Python311\Lib\site-packages\schedule\__init__.py", line 693, in run
+    ret = self.job_func()
+          ^^^^^^^^^^^^^^^
+  File "c:\Users\Developer\Desktop\NetAnchor\Python\main.py", line 163, in update_ip_manager
+    IP_MANAGER.update()
+  File "c:\Users\Developer\Desktop\NetAnchor\Python\ip_manager.py", line 86, in update
+    return self.get_network_from_GAS()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\Developer\Desktop\NetAnchor\Python\ip_manager.py", line 102, in get_network_from_GAS
+    fetched_network = [[value[0], value[1]] for value in json.loads(response.content)['value']]
+                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Developer\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Developer\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Developer\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
