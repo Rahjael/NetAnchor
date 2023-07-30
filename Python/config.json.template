@@ -1,10 +1,5 @@
 
-
-# STRONG ADVICE: Rename this file config.json e keep it .gitignore'd
-
 {
-    "UI_VERSION": "vX.Y.Z",
-    "GAS_SCRIPT_VERSION": "vX.Y.Z",
     "GAS_SCRIPT_URL": "",
     "GAS_AUTHCODE": "",
     "IP_UPDATE_INTERVAL": 10,
