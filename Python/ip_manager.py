@@ -72,6 +72,12 @@ class IPManager:
       return
     
     response = requests.post(address, headers=headers, data=json.dumps(data))
+
+    # Ignore html messages from GAS
+    if '<!DOCTYPE html>' in response.text:
+      self.logger.log('ERROR: received html data from server. Database sheet is probably offline, try again later')
+      return
+    
     self.logger.log('Response from server: ', response.text)
 
   def update(self) -> list[str]:
@@ -109,8 +115,13 @@ class IPManager:
       return
     
     response = requests.post(address, headers=headers, data=json.dumps(data))
-    self.logger.log('Response from server: ', response.text)
-    
+
+    # Ignore html messages from GAS
+    if '<!DOCTYPE html>' in response.text:
+      self.logger.log('ERROR: received html data from server. Database sheet is probably offline, try again later')
+      return
+
+    self.logger.log('Response from server: ', response.text)    
     fetched_network = [[value[0], value[1]] for value in json.loads(response.content)['value']]
 
     for record in fetched_network:
