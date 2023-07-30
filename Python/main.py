@@ -53,16 +53,11 @@ def save_config(config, CONFIG_FILE_PATH):
     LOGGER.log('Config saved.')
 
 def create_main_window_layout():
-
-    # LOGGER.log('Creating layout for network: ', IP_MANAGER.get_network())
-
     # Text version    
     # Create a font with the same family and size but bold style
     default_font = sg.DEFAULT_FONT[0]
     default_size = sg.DEFAULT_FONT[1]
     bold_font = tkFont.Font(family=default_font, size=default_size, weight="bold", slant="italic")
-
-
 
     # Create network list, bold our current IP and LABEL
     network_frame_rows = []
@@ -82,7 +77,7 @@ def create_main_window_layout():
     ], expand_y=True, expand_x=True)
 
     log_rows = [row for row in LOGGER.get_logs_as_strings()]
-    log_frame_rows = [[sg.Listbox(log_rows, size=(None, CONFIG['MAX_UI_LOGS']), key='-LOGS_LISTBOX-',
+    log_frame_rows = [[sg.Listbox(log_rows, size=(100, CONFIG['MAX_UI_LOGS']), key='-LOGS_LISTBOX-',
                                   disabled=False, no_scrollbar=True, expand_x=True)]]
     log_frame = sg.Frame('Log', log_frame_rows, expand_x=True)
 
@@ -216,8 +211,8 @@ def main():
 
         event, values = MAIN_WINDOW.read(timeout=500) # ! this is a blocking function until an event is triggered. Set a timeout (ms)
 
-        if event != '__TIMEOUT__':
-            LOGGER.log('Event: ', event)
+        # if event != '__TIMEOUT__':
+        #     LOGGER.log('Event: ', event)
 
         schedule.run_pending()
 
@@ -244,7 +239,7 @@ def main():
             # Optionally, you can wait for the thread to complete using join()
             # thread.join()
 
-        elif type(event) == 'str' and event.startswith("-BUTTON_COPY_IP_"):
+        elif type(event) == str and event.startswith("-BUTTON_COPY_IP_"):
             index = int(event.split("_")[3].replace('-', ''))
             client_ip = MAIN_WINDOW[f'-CLIENT_{index}_IP-'].get()
             sg.clipboard_set(client_ip)
