@@ -274,7 +274,7 @@ def main():
 #
 
 
-UI_VERSION = 'v0.1.0'
+UI_VERSION = 'v0.1.0_RC'
 GAS_SCRIPT_VERSION = 'vX.Y.Z'
 
 CONFIG_FILE_PATH = os.path.join(os.getcwd(), 'config.json')
