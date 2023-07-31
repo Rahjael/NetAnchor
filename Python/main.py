@@ -10,7 +10,7 @@ import threading
 import PySimpleGUI as sg
 import webbrowser
 
-from images import cc_image, github_image, donate_image
+from images import cc_image, github_image, donate_image, logo_image
 from ip_manager import IPManager
 from logger import Logger
 
@@ -113,7 +113,7 @@ def get_main_window():
     global PROGRAM_TITLE
     print('getting main window')
 
-    window = sg.Window(f"{PROGRAM_TITLE}", create_main_window_layout(), resizable=False)
+    window = sg.Window(f"{PROGRAM_TITLE}", create_main_window_layout(), icon=logo_image, resizable=False)
     return window
 
 def splash_window():
