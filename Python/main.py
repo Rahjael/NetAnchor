@@ -258,7 +258,7 @@ def main():
         MAIN_WINDOW['-LOGS_LISTBOX-'].update(values=log_rows)
         MAIN_WINDOW.refresh()
 
-        # See dev_readme.md for an explanation about this
+        # See dev_readme.md for an explanation about this # TODO
         if not IP_MANAGER.has_network_been_given():
             MAIN_WINDOW.close()
             MAIN_WINDOW = get_main_window()
