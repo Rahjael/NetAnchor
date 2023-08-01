@@ -8,18 +8,7 @@ from urllib.parse import urlparse
 
 
 class IPManager:
-  """Handles IP retrieval, checks and POST requests to the GAS script"""
   def __init__(self, CONFIG: dict, logger=None, network=[], last_known_ip=None):
-    """_summary_
-
-    Args:
-      ip_service (str): The service to use for IP retrieval
-      gas_script_url (str): The URL where the GAS script resides
-      gas_auth_code (str): The security password so GAS can accept requests
-      machine_label (str): The label for this machine
-      encryption_key (str): The encryption key for encrypted requests
-    """
-
     self.CONFIG = CONFIG
     self.gas_script_url = CONFIG['GAS_SCRIPT_URL']
     self.gas_auth_code = CONFIG['GAS_AUTHCODE']
@@ -88,13 +77,9 @@ class IPManager:
       self.logger.log("Unable to retrieve IP")
     elif not self.is_valid_ipv4(current_ip):
       self.logger.log(f'Failed to retrieve valid ip address ({self.get_own_ip_attempts} tries)')
-    # elif current_ip != self.last_known_ip:
     elif self.is_valid_ipv4(current_ip):
       self.send_ip_to_gas(current_ip)
       self.last_known_ip = current_ip
-    # else:
-    #   self.logger.log(f'IP has not changed since last check. ({current_ip}/{self.last_known_ip})')
-    
     self.get_own_ip_attempts = 0
     self.get_network_from_GAS()
 
@@ -164,7 +149,7 @@ class IPManager:
   
   def get_current_ip(self):
     return self.last_known_ip
-  
+
 
 
 def is_valid_url(url):

@@ -1,4 +1,3 @@
-import base64
 from datetime import datetime
 import json
 import os
@@ -277,8 +276,7 @@ def main():
 #
 
 
-UI_VERSION = 'v0.1.0_RC'
-GAS_SCRIPT_VERSION = 'vX.Y.Z'
+VERSION = 'v0.1.0_RC'
 
 CONFIG_FILE_PATH = os.path.join(os.getcwd(), 'config.json')
 
@@ -288,7 +286,7 @@ IP_MANAGER = IPManager(CONFIG, LOGGER)
 MAIN_WINDOW = None # Main window is in the global scope so that it's easier to refresh it when a scheduled task runs
 
 LOGGER.log('Program started')
-PROGRAM_TITLE = f"NetAnchor - {UI_VERSION}"
+PROGRAM_TITLE = f"NetAnchor - {VERSION}"
 
 # Schedule the updating task
 schedule.every(CONFIG['IP_UPDATE_INTERVAL']).minutes.do(update_ip_manager)
@@ -296,13 +294,3 @@ schedule.every(CONFIG['IP_UPDATE_INTERVAL']).minutes.do(update_ip_manager)
 
 if __name__ == "__main__":
     main()
-
-
-
-# ip = '151.96.56.23'
-# encrypted = IP_MANAGER.encrypt_str(ip)
-# decrypted = IP_MANAGER.decrypt_str(encrypted)
-# print('ip: ', ip)
-# print('encrypted: ', encrypted, type(encrypted))
-# print('decrypted: ', decrypted, type(decrypted))
-

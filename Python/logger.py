@@ -9,7 +9,7 @@ class Logger:
     def log(self, *args):
         message = ' '.join(str(arg) if not isinstance(arg, dict) else json.dumps(arg) for arg in args)
         date = datetime.now()
-        time.sleep(1/10)
+        time.sleep(1/10) # to allow for correct ordering of the logs
         self.logs.append((date, message))
         self.logs.sort(reverse=True)
         print('LOGGER: ', message)
