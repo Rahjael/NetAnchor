@@ -276,7 +276,7 @@ def main():
 #
 
 
-VERSION = 'v0.1.0_RC'
+VERSION = 'v0.1.0'
 
 CONFIG_FILE_PATH = os.path.join(os.getcwd(), 'config.json')
 
