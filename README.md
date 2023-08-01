@@ -1,10 +1,6 @@
 # NetAnchor
 
-
-
 [<img src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png">](http://creativecommons.org/licenses/by-nc-sa/4.0/)
-
-
 
 
 Keep track of dynamic IPs for all your connected devices, encrypted and private. 
@@ -91,17 +87,18 @@ Later on:
 
 
 
+
 ## Embedded rules
 
 These are config choices made by the developers, hard coded in the program. They may be turned into configurable parameters in the future.
 
 ### GAS:
-- Any stored IP older than 2 days is removed from the network.
+- Any stored IP older than 2 days is removed from the network. (not yet implemented)
 
 
 
 ## Changelog
 
-### 2023/07/? - (TODO) 
+### 2023/08/01
 - Released v0.1.0
 
