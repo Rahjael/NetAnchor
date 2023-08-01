@@ -8,8 +8,9 @@ import string
 import tkinter.font as tkFont
 import threading
 import PySimpleGUI as sg
+import webbrowser
 
-from images import cc_image, github_image
+from images import cc_image, github_image, donate_image, logo_image
 from ip_manager import IPManager
 from logger import Logger
 
@@ -53,16 +54,11 @@ def save_config(config, CONFIG_FILE_PATH):
     LOGGER.log('Config saved.')
 
 def create_main_window_layout():
-
-    # LOGGER.log('Creating layout for network: ', IP_MANAGER.get_network())
-
     # Text version    
     # Create a font with the same family and size but bold style
     default_font = sg.DEFAULT_FONT[0]
     default_size = sg.DEFAULT_FONT[1]
     bold_font = tkFont.Font(family=default_font, size=default_size, weight="bold", slant="italic")
-
-
 
     # Create network list, bold our current IP and LABEL
     network_frame_rows = []
@@ -82,7 +78,7 @@ def create_main_window_layout():
     ], expand_y=True, expand_x=True)
 
     log_rows = [row for row in LOGGER.get_logs_as_strings()]
-    log_frame_rows = [[sg.Listbox(log_rows, size=(None, CONFIG['MAX_UI_LOGS']), key='-LOGS_LISTBOX-',
+    log_frame_rows = [[sg.Listbox(log_rows, size=(100, CONFIG['MAX_UI_LOGS']), key='-LOGS_LISTBOX-',
                                   disabled=False, no_scrollbar=True, expand_x=True)]]
     log_frame = sg.Frame('Log', log_frame_rows, expand_x=True)
 
@@ -95,7 +91,7 @@ def create_main_window_layout():
         # [sg.Text("Open sheet in Google Drive")],
         [sg.VPush()],
         [sg.Image(data=cc_image, key='-CC_IMAGE-', enable_events=True)],
-        [sg.Text("Donate")],
+        [sg.Image(data=donate_image, key='-DONATE_IMAGE-', enable_events=True)],
         [sg.Image(data=github_image, key='-GITHUB_IMAGE-', enable_events=True)],
     ], element_justification='r', expand_x=True, expand_y=True)
 
@@ -117,7 +113,7 @@ def get_main_window():
     global PROGRAM_TITLE
     print('getting main window')
 
-    window = sg.Window(f"{PROGRAM_TITLE}", create_main_window_layout(), resizable=False)
+    window = sg.Window(f"{PROGRAM_TITLE}", create_main_window_layout(), icon=logo_image, resizable=False)
     return window
 
 def splash_window():
@@ -216,8 +212,8 @@ def main():
 
         event, values = MAIN_WINDOW.read(timeout=500) # ! this is a blocking function until an event is triggered. Set a timeout (ms)
 
-        if event != '__TIMEOUT__':
-            LOGGER.log('Event: ', event)
+        # if event != '__TIMEOUT__':
+        #     LOGGER.log('Event: ', event)
 
         schedule.run_pending()
 
@@ -230,6 +226,13 @@ def main():
         # Exit the program when the window is closed
         if event == sg.WIN_CLOSED or event == None:
             break
+        elif event == '-CC_IMAGE-':
+            webbrowser.open('https://creativecommons.org/licenses/by-nc-sa/4.0/')
+        elif event == '-GITHUB_IMAGE-':
+            webbrowser.open('https://github.com/Rahjael/NetAnchor')
+        elif event == '-DONATE_IMAGE-':
+            # TODO implement this
+            LOGGER.log('Donations are not yet implemented. Thank you anyways!')
         elif event == '-BUTTON_OPEN_CONFIG-':
             if open_config_window():  # opens config window and returns True if config is saved
                 MAIN_WINDOW.close()
@@ -243,8 +246,7 @@ def main():
             thread.start()
             # Optionally, you can wait for the thread to complete using join()
             # thread.join()
-
-        elif type(event) == 'str' and event.startswith("-BUTTON_COPY_IP_"):
+        elif type(event) == str and event.startswith("-BUTTON_COPY_IP_"):
             index = int(event.split("_")[3].replace('-', ''))
             client_ip = MAIN_WINDOW[f'-CLIENT_{index}_IP-'].get()
             sg.clipboard_set(client_ip)
@@ -275,7 +277,7 @@ def main():
 #
 
 
-UI_VERSION = 'v0.1.0'
+UI_VERSION = 'v0.1.0_RC'
 GAS_SCRIPT_VERSION = 'vX.Y.Z'
 
 CONFIG_FILE_PATH = os.path.join(os.getcwd(), 'config.json')
