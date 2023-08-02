@@ -15,42 +15,12 @@ from logger import Logger
 
 
 
+
 #
 #
 # FUNCTIONS' DEFINITIONS
 #
 #
-
-def load_config(CONFIG_FILE_PATH) -> str:
-    if os.path.exists(CONFIG_FILE_PATH):
-        LOGGER.log('Config file exists.')
-    else:
-        LOGGER.log('Config file does not exists. Loading default config')
-        CONFIG = {
-            "GAS_SCRIPT_URL": "",
-            "GAS_AUTHCODE": "",
-            "IP_UPDATE_INTERVAL": 15,
-            "MACHINE_NAME": "NetAnchored Device",
-            "IP_SERVICE": "https://api.ipify.org",
-            "USE_ENCRYPTED_DATABASE": False,
-            "IP_ENCRYPTION_KEY": "",
-            "MAX_UI_LOGS": 10
-        }
-        return CONFIG
-        # raise Exception('Config file not found. Unable to run program.')
-
-
-    LOGGER.log('Loading config...')
-    with open(CONFIG_FILE_PATH, "r") as file:
-        CONFIG = json.load(file)
-    LOGGER.log('Config loaded.')
-    return CONFIG
-
-def save_config(config, CONFIG_FILE_PATH):
-    LOGGER.log('Saving config...')
-    with open(CONFIG_FILE_PATH, "w") as file:
-        json.dump(config, file, indent=4)
-    LOGGER.log('Config saved.')
 
 def create_main_window_layout():
     # Text version    
@@ -84,10 +54,6 @@ def create_main_window_layout():
 
     upper_row_right_column = sg.Column([
         [sg.Button('Update now', key='-BUTTON_FORCE_NETWORK_UPDATE-')],
-        [sg.Button('Open config', key='-BUTTON_OPEN_CONFIG-')],
-        # [sg.Button('Reload window', key='-BUTTON_RELOAD_WINDOW-')],
-        # [sg.Text("Download TightVNC")],
-        # [sg.Text("Open sheet in Google Drive")],
         [sg.VPush()],
         [sg.Image(data=cc_image, key='-CC_IMAGE-', enable_events=True)],
         [sg.Image(data=donate_image, key='-DONATE_IMAGE-', enable_events=True)],
@@ -125,48 +91,6 @@ def splash_window():
     window = sg.Window(f"{PROGRAM_TITLE} - Splash Screen", layout) # ! this is a blocking function until an event is triggered. Set a timeout (ms)
     window.read(timeout=0)
     return window
-
-def open_config_window() -> bool:
-    global IP_MANAGER
-
-    layout = [
-        [sg.Push(), sg.Text("Config", pad=(0, 50)), sg.Push()],
-        [sg.Text('GAS script url:'), sg.Push(), sg.Input(CONFIG['GAS_SCRIPT_URL'], size=45, key='-GAS_SCRIPT_URL-')],
-        [sg.Text('GAS AuthCode:'), sg.Push(), sg.Input(CONFIG['GAS_AUTHCODE'], size=45, key='-GAS_AUTHCODE-')],
-        [sg.Text('Network update interval (mins):'), sg.Push(), sg.Input(str(CONFIG['IP_UPDATE_INTERVAL']), size=45, key='-IP_UPDATE_INTERVAL-')],
-        [sg.Text('Machine label:'), sg.Push(), sg.Input(CONFIG['MACHINE_NAME'], size=45, key='-MACHINE_LABEL-')],
-        [sg.Text('IP retrieval service:'), sg.Push(), sg.Input(CONFIG['IP_SERVICE'], size=45, key='-IP_SERVICE-')],
-        [sg.Text('Use encrypted database:'), sg.Push(), sg.Checkbox('', default=bool(CONFIG['USE_ENCRYPTED_DATABASE']), key='-USE_ENCRYPTED_DATABASE-')],
-        [sg.Text('Encryption key:'), sg.Push(), sg.Input(CONFIG['IP_ENCRYPTION_KEY'], size=45, key='-IP_ENCRYPTION_KEY-')],
-        [sg.Text('Max logs to show:'), sg.Push(), sg.Input(str(CONFIG['MAX_UI_LOGS']), size=45, key='-MAX_UI_LOGS-')],
-        [sg.Push(), sg.Text('Some settings require to restart for changes to take effect.', pad=(0, 50)), sg.Push()],
-        [sg.Button('Discard changes'), sg.Button(
-            'Save changes', key='-SAVE-', expand_x=True)],
-    ]
-    window = sg.Window(f'{PROGRAM_TITLE} - Config', layout) # ! this is a blocking function until an event is triggered.
-    event, values = window.read()
-
-    if event == '-SAVE-':
-        CONFIG['GAS_SCRIPT_URL'] = values['-GAS_SCRIPT_URL-']
-        CONFIG['GAS_AUTHCODE'] = values['-GAS_AUTHCODE-']
-        CONFIG['IP_UPDATE_INTERVAL'] = int(values['-IP_UPDATE_INTERVAL-']) if int(values['-IP_UPDATE_INTERVAL-']) > 0 and int(values['-IP_UPDATE_INTERVAL-']) <= 60 else 15
-        CONFIG['MACHINE_NAME'] = values['-MACHINE_LABEL-']
-        CONFIG['IP_SERVICE'] = values['-IP_SERVICE-']
-        CONFIG['USE_ENCRYPTED_DATABASE'] = values['-USE_ENCRYPTED_DATABASE-']
-        CONFIG['IP_ENCRYPTION_KEY'] = values['-IP_ENCRYPTION_KEY-']
-        CONFIG['MAX_UI_LOGS'] = int(values['-MAX_UI_LOGS-'])
-
-        save_config(CONFIG, CONFIG_FILE_PATH)
-        IP_MANAGER = IPManager(CONFIG, LOGGER, IP_MANAGER.get_network(), IP_MANAGER.get_current_ip())
-        window.close()
-        return True
-    else:
-        window.close()
-        return False
-
-def generate_random_authcode() -> str:
-    chars = string.ascii_letters + string.digits
-    return ''.join(random.choice(chars) for _ in range(20))
 
 def update_ip_manager():
     '''
@@ -232,13 +156,7 @@ def main():
         elif event == '-DONATE_IMAGE-':
             # TODO implement this
             LOGGER.log('Donations are not yet implemented. Thank you anyways!')
-        elif event == '-BUTTON_OPEN_CONFIG-':
-            if open_config_window():  # opens config window and returns True if config is saved
-                MAIN_WINDOW.close()
-                MAIN_WINDOW = get_main_window()
-        elif event == '-BUTTON_RELOAD_WINDOW-':
-            MAIN_WINDOW.close()
-            MAIN_WINDOW = get_main_window()
+            
         elif event == '-BUTTON_FORCE_NETWORK_UPDATE-':
             MAIN_WINDOW['-BUTTON_FORCE_NETWORK_UPDATE-'].update('Updating...', disabled=True)
             thread = threading.Thread(target=mt_ip_manager_update, args=(IP_MANAGER,))
@@ -276,17 +194,33 @@ def main():
 #
 
 
-VERSION = 'v0.1.0'
+VERSION = 'v0.1.2 (tracker only)'
 
-CONFIG_FILE_PATH = os.path.join(os.getcwd(), 'config.json')
+PROGRAM_TITLE = f"NetAnchor - {VERSION}"
 
 LOGGER = Logger()
-CONFIG = load_config(CONFIG_FILE_PATH)
+
+
+CONFIG = {
+    "GAS_SCRIPT_URL": "https://script.google.com/macros/s/AKfycbxB3iYbBCgJ7H0kAOdSFSozWsqguPj6eE356C52tvTTHTPeOwuEx0zc4OjyKgrr3RY/exec",
+    "GAS_AUTHCODE": "zombozombozombo",
+    "IP_UPDATE_INTERVAL": 15,
+    "MACHINE_NAME": "Home Win10",
+    "IP_SERVICE": "https://api.ipify.org",
+    "USE_ENCRYPTED_DATABASE": False,
+    "IP_ENCRYPTION_KEY": "",
+    "MAX_UI_LOGS": 10
+}
+
+
+
+
+
+
 IP_MANAGER = IPManager(CONFIG, LOGGER)
-MAIN_WINDOW = None # Main window is in the global scope so that it's easier to refresh it when a scheduled task runs
+MAIN_WINDOW =  sg.Window('PZ Server', [[]])   # Main window is in the global scope so that it's easier to refresh it when a scheduled task runs
 
 LOGGER.log('Program started')
-PROGRAM_TITLE = f"NetAnchor - {VERSION}"
 
 # Schedule the updating task
 schedule.every(CONFIG['IP_UPDATE_INTERVAL']).minutes.do(update_ip_manager)

@@ -26,61 +26,7 @@ class IPManager:
       raise Exception('Logger not set. Exiting program.')
 
 
-  def get_own_ip(self) -> Union[str, None]:
-    """Sends a GET request to the IP retrieval service of choice.
-
-    Returns:
-      Union[str, None]: either the current IP (str) or None if retrieval fails
-    """
-    self.logger.log('Getting own IP...')
-    try:
-      ip = requests.get(self.ip_service).text
-    except requests.exceptions.RequestException as e:
-      self.logger.log(e)
-      ip = None
-    return ip
-
-  def send_ip_to_gas(self, current_ip: str) -> None:
-    self.logger.log('Sending own IP to GAS...')
-    address = self.gas_script_url
-    headers = {'Content-Type': 'application/json'}
-    ip_to_send = self.encrypt_str(current_ip) if self.CONFIG['USE_ENCRYPTED_DATABASE'] else current_ip
-    machine_label = self.encrypt_str(self.machine_label) if self.CONFIG['USE_ENCRYPTED_DATABASE'] else self.machine_label
-
-    data = {
-      'authCode': self.gas_auth_code,
-      # TODO "serviceName" should be changed to "machineLabel", but we have to sync this change with GAS routes or the program breaks
-      'serviceName': machine_label,
-      'requestType': 'UPDATE_IP',
-      'ip': ip_to_send,
-    }
-    self.logger.log(f'Sending this to GAS: ', data)
-    
-    if not is_valid_url(address):
-      self.logger.log(f'Invalid url: {address}')
-      return
-    
-    response = requests.post(address, headers=headers, data=json.dumps(data))
-
-    # Ignore html messages from GAS
-    if '<!DOCTYPE html>' in response.text:
-      self.logger.log('ERROR: received html data from server. Database sheet is probably offline, try again later')
-      return
-    
-    self.logger.log('Response from server: ', response.text)
-
   def update(self) -> list[str]:
-    self.get_own_ip_attempts += 1
-    current_ip = self.get_own_ip()
-
-    if current_ip is None:
-      self.logger.log("Unable to retrieve IP")
-    elif not self.is_valid_ipv4(current_ip):
-      self.logger.log(f'Failed to retrieve valid ip address ({self.get_own_ip_attempts} tries)')
-    elif self.is_valid_ipv4(current_ip):
-      self.send_ip_to_gas(current_ip)
-      self.last_known_ip = current_ip
-    self.get_own_ip_attempts = 0
     self.get_network_from_GAS()
 
 
@@ -132,17 +78,7 @@ class IPManager:
   def is_valid_ipv4(self, ip: str) -> bool:
     pattern = r"^(?:\d{1,3}\.){3}\d{1,3}$"
     return bool(re.match(pattern, ip))
-
-  def encrypt_str(self, string_to_encrypt: str) -> str:
-    cipher_suite = Fernet(self.encryption_key)
-    encrypted_bytes = cipher_suite.encrypt(string_to_encrypt.encode())
-    return encrypted_bytes.decode()
   
-  def decrypt_str(self, string_to_decrypt: str) -> str:
-    cipher_suite = Fernet(self.encryption_key)
-    decrypted_bytes = cipher_suite.decrypt(string_to_decrypt.encode())
-    return decrypted_bytes.decode()
-
   def get_network(self):
     self.network_has_been_given = True
     return self.network
