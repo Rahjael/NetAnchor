@@ -109,15 +109,6 @@ def mt_ip_manager_update(IP_MANAGER):
 def main():
     global MAIN_WINDOW
 
-    # if a new key is generated, we write it to the config.json
-    if CONFIG['IP_ENCRYPTION_KEY'] == '':
-        CONFIG['IP_ENCRYPTION_KEY'] = IP_MANAGER.encryption_key.decode()
-        LOGGER.log(f'Saving new key: ', CONFIG['IP_ENCRYPTION_KEY'])
-        with open('config.json', 'w') as config_file:
-            json.dump(CONFIG, config_file, indent=4)
-
-    # IP_MANAGER.update()
-
     sg.theme("DefaultNoMoreNagging")  # Choose a theme for the window
 
     # Event loop to process events and update the window
