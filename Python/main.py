@@ -57,7 +57,7 @@ def create_main_window_layout():
         [sg.VPush()],
         # [sg.Image(data=cc_image, key='-CC_IMAGE-', enable_events=True)],
         # [sg.Image(data=donate_image, key='-DONATE_IMAGE-', enable_events=True)],
-        # [sg.Image(data=github_image, key='-GITHUB_IMAGE-', enable_events=True)],
+        [sg.Image(data=github_image, key='-GITHUB_IMAGE-', enable_events=True)],
     ], element_justification='r', expand_x=True, expand_y=True)
 
     upper_row = [upper_row_left_column, upper_row_right_column]
