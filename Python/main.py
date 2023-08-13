@@ -55,9 +55,9 @@ def create_main_window_layout():
     upper_row_right_column = sg.Column([
         [sg.Button('Update now', key='-BUTTON_FORCE_NETWORK_UPDATE-')],
         [sg.VPush()],
-        [sg.Image(data=cc_image, key='-CC_IMAGE-', enable_events=True)],
-        [sg.Image(data=donate_image, key='-DONATE_IMAGE-', enable_events=True)],
-        [sg.Image(data=github_image, key='-GITHUB_IMAGE-', enable_events=True)],
+        # [sg.Image(data=cc_image, key='-CC_IMAGE-', enable_events=True)],
+        # [sg.Image(data=donate_image, key='-DONATE_IMAGE-', enable_events=True)],
+        # [sg.Image(data=github_image, key='-GITHUB_IMAGE-', enable_events=True)],
     ], element_justification='r', expand_x=True, expand_y=True)
 
     upper_row = [upper_row_left_column, upper_row_right_column]
@@ -196,7 +196,7 @@ CONFIG = {
     "GAS_SCRIPT_URL": "https://script.google.com/macros/s/AKfycbxB3iYbBCgJ7H0kAOdSFSozWsqguPj6eE356C52tvTTHTPeOwuEx0zc4OjyKgrr3RY/exec",
     "GAS_AUTHCODE": "zombozombozombo",
     "IP_UPDATE_INTERVAL": 15,
-    "MACHINE_NAME": "Home Win10",
+    "MACHINE_NAME": "Zomboidi Progettanti - Client",
     "IP_SERVICE": "https://api.ipify.org",
     "USE_ENCRYPTED_DATABASE": False,
     "IP_ENCRYPTION_KEY": "",
